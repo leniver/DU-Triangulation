@@ -1,0 +1,30 @@
+{
+    "Lua.format.defaultConfig": {
+        "max_line_length": "300"
+    },
+    "Lua.diagnostics.globals": [
+        "traceback",
+        "localDirectory",
+        "wrapper",
+        "baseColor",
+        "language",
+        "triangulationBackgroundColor",
+        "triangulationLeft",
+        "triangulationTop",
+        "triangulationFontSize",
+        "triangulationAngle",
+        "assistedTriangulationDistance"
+    ],
+    "intelephense.files.exclude": [
+        "**/.git/**",
+        "**/out/development/*",
+        "**/out/production/*"
+    ],
+    "Lua.diagnostics.libraryFiles": "Enable",
+    "Lua.doc.protectedName": [
+        "__*"
+    ],
+    "Lua.workspace.library": [
+        "util/Codex.lua"
+    ]
+}

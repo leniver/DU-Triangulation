@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "fmtVersion": 3
+  },
+  "name": "Dual Universe Triangulation",
+  "description": "Triangulation script to help with mining",
+  "sourcePath": "src",
+  "outputPath": "out",
+  "libs": [],
+  "builds": {
+    "main": {
+      "name": "main",
+      "type": "control",
+      "slots": {}
+    }
+  },
+  "targets": {
+    "development": {
+      "name": "development",
+      "minify": false,
+      "handleErrors": false
+    },
+    "production": {
+      "name": "production",
+      "minify": true,
+      "handleErrors": true
+    }
+  },
+  "internalPaths": [
+    "autoconf/",
+    "cpml/",
+    "pl/",
+    "utils/event"
+  ]
+}
