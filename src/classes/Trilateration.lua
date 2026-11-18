@@ -59,6 +59,9 @@ local function isDistanceCloserThan(s1, s2, s3, s4, point, distance)
     return s1:dst(point) <= distance and s2:dst(point) <= distance and s3:dst(point) <= distance and s4:dst(point) <= distance
 end
 
+--- How far (m) the result may be from each reading's sphere and still be accepted.
+Trilateration.tolerance = 50
+
 --- Readings that are almost on a line or in a plane give results that pass the final check but can
 --- be hundreds of metres off. With whole-metre readings, these minimums keep 90% of the results
 --- within about 12 m of the ore (25 m legs, ore 30-200 m away).
@@ -111,7 +114,7 @@ function Trilateration.solve(points)
         buildTrilaterationSet(points[5], s3, s4, s1, addResults)
         buildTrilaterationSet(points[5], s4, s1, s2, addResults)
         for j = 1, #addResults do
-            if isDistanceCloserThan(s1, s2, s3, s4, addResults[j], 50) then
+            if isDistanceCloserThan(s1, s2, s3, s4, addResults[j], Trilateration.tolerance) then
                 results[#results + 1] = addResults[j]
             end
         end
@@ -132,7 +135,7 @@ function Trilateration.solve(points)
         end
     end
 
-    if result == nil or not isDistanceCloserThan(s1, s2, s3, s4, result, 50) then
+    if result == nil or not isDistanceCloserThan(s1, s2, s3, s4, result, Trilateration.tolerance) then
         return nil
     end
 

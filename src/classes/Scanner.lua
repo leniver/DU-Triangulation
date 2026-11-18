@@ -2,7 +2,6 @@
 ---@field points Sphere[]
 ---@field targets? string[]
 ---@field distance number
----@field limit number
 ---@field problem string|nil why no reading can be taken here: "close", "line" or "plane"
 ---@field system System
 ---@field translator Translator
@@ -25,16 +24,32 @@ Scanner = Class(Widget)
 
 local floor, abs, min, clamp = math.floor, math.abs, math.min, Tools.clamp
 
+local MAX_DISTANCE = 480 -- range of the game's scanner, in metres: the slider goes from 0 to this
+local START_DISTANCE = 250 -- distance on the slider when the script starts
+local MIN_SPACING = 20 -- minimum distance between two readings, in metres ("Too close")
+-- The assisted readings are at least 5 m further apart than MIN_SPACING, so that a reading taken
+-- a few metres short of its waypoint isn't refused as "Too close".
+local ASSISTED_MIN, ASSISTED_MAX = MIN_SPACING + 5, 50
+local ASSISTED_SIDE_STEP = 5 -- the 4th assisted waypoint is also moved this far to the side, in metres
+local FAST_SCROLL = 5 -- the mouse wheel moves the slider this many times faster while Shift is held
+local GAUGE_HEIGHT = 28.5 -- height of the game's scanner gauge, in % of the screen height (vh)
+local SLIDER_OFFSET = 3 -- moves the slider's glyph onto its height, in % of the gauge
+
+--- Height of the slider for a distance, in % of the gauge from its bottom. The game's gauge isn't
+--- linear; this curve follows it (0 m: 0 %, 240 m: 54 %, 480 m: 95 %).
+---@param distance number in metres
+---@return number
+local function sliderHeight(distance)
+    return 0.02 + 0.253 * distance - 1.13E-04 * distance ^ 2
+end
+
 ---@param system System
 ---@param player Player
 ---@param translator Translator
 function Scanner:init(system, player, translator)
     self.points = {}
     self.targets = nil
-    self.distance = 250
-
-
-    self.limit = 20
+    self.distance = START_DISTANCE
     self.problem = nil
 
     self.system = system
@@ -58,10 +73,6 @@ function Scanner:init(system, player, translator)
 
     self.lastError = nil
 
-    self.offsetLeft = 0
-    self.offsetTop = 0
-    self.angle = 15.85
-    self.fontSize = 12
     self:initializeOffets(false)
 
     self.backgroundColor = Tools.toRGB(triangulationBackgroundColor)
@@ -161,9 +172,7 @@ function Scanner:show()
     self:initializeOffets(true)
 
     local position = vec3(self.player.getWorldPosition())
-    -- At least 5 m more than the minimum distance between readings, so that a reading taken
-    -- a few metres short of the waypoint isn't refused as "Too close".
-    local increment = clamp(assistedTriangulationDistance, self.limit + 5, 50)
+    local increment = clamp(assistedTriangulationDistance, ASSISTED_MIN, ASSISTED_MAX)
 
     -- Lay the pattern out on the horizontal plane: the player's up is the planet's vertical,
     -- and the camera only gives the heading, whatever its pitch.
@@ -180,7 +189,7 @@ function Scanner:show()
 
     local p1 = position + forward * increment
     local p2 = p1 + side * increment
-    local p3 = p2 + vertical * increment + side * 5
+    local p3 = p2 + vertical * increment + side * ASSISTED_SIDE_STEP
     self.targets = {
         Tools.toWaypoint(position),
         Tools.toWaypoint(p1),
@@ -282,11 +291,11 @@ function Scanner:onUpdate()
     if not self.hide then
         local throttle = self.system.getThrottleInputFromMouseWheel();
         if self.shiftDown then
-            throttle = clamp(throttle * 5, -5, 5)
+            throttle = clamp(throttle * FAST_SCROLL, -FAST_SCROLL, FAST_SCROLL)
         end
         self.position = vec3(self.player.getWorldPosition())
         self.problem = self:checkPosition()
-        self.distance = clamp(floor(self.distance + (throttle * 1)), 0, 480)
+        self.distance = clamp(floor(self.distance + throttle), 0, MAX_DISTANCE)
 
         if abs(throttle) > 0 then
             self.lastError = nil
@@ -303,7 +312,7 @@ end
 ---@return string|nil problem "close" (too close to an earlier reading), "line" or "plane" (see Trilateration.checkNextReading)
 function Scanner:checkPosition()
     for i = 1, #self.points do
-        if (self.points[i].center - self.position):len() < self.limit then
+        if (self.points[i].center - self.position):len() < MIN_SPACING then
             return "close"
         end
     end
@@ -324,7 +333,7 @@ function Scanner:render()
             html = [[<div class="triangulation-hidden">]] .. self.translator:get("Triangulation hidden") .. [[</div>]]
         }
     else
-        local top = 0.02 + 0.253 * self.distance + -1.13E-04 * (self.distance ^ 2)
+        local sliderTop = GAUGE_HEIGHT / 100 * (100 - sliderHeight(self.distance) - SLIDER_OFFSET)
         local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]
 
         if self.lastError ~= nil then
@@ -342,10 +351,10 @@ function Scanner:render()
         return {
             style = [[
             #triangulation {
-            border-bottom: 28.5vh solid rgba(]] .. self.backgroundColor .. [[,.25);
+            border-bottom: ]] .. GAUGE_HEIGHT .. [[vh solid rgba(]] .. self.backgroundColor .. [[,.25);
             border-right: 1vw solid transparent;
             font-size: ]] .. self.fontSize .. [[px;
-            height: 28.5vh;
+            height: ]] .. GAUGE_HEIGHT .. [[vh;
             left: 50%;
             margin-left: ]] .. self.offsetLeft .. [[px;
             margin-top: ]] .. self.offsetTop .. [[px;
@@ -359,7 +368,7 @@ function Scanner:render()
             color:#eca943;
                 display: block;
             left: -8px;
-            top: ]] .. (28.5 / 100 * (100 - top - 3)) .. [[vh;
+            top: ]] .. sliderTop .. [[vh;
             position: absolute;
         }
             #triangulation .slider i{
@@ -388,7 +397,7 @@ function Scanner:render()
                 display: block;
                 position: absolute;
                 text-align: right;
-                top: calc(28.5vh + 5px);
+                top: calc(]] .. GAUGE_HEIGHT .. [[vh + 5px);
                 width: 100%;
             }
          ]],

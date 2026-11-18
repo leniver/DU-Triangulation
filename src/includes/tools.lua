@@ -4,6 +4,8 @@ local match, format = string.match, string.format
 --- Helpers shared by the classes, in one global table.
 Tools = {}
 
+local DEFAULT_COLOR = { 2, 52, 110 } -- dark blue, for a colour parameter that isn't "R G B"
+
 local defaultOffsets = {
     ["default"] = {
         scanner = {
@@ -143,9 +145,7 @@ end
 function Tools.toRGB(color)
     local r, g, b = match(color, "(%d+) (%d+) (%d+)")
     if r == nil or g == nil or b == nil then
-        r = 2
-        g = 52
-        b = 110
+        r, g, b = DEFAULT_COLOR[1], DEFAULT_COLOR[2], DEFAULT_COLOR[3]
     end
     r = Tools.clamp(tonumber(r), 0, 255)
     g = Tools.clamp(tonumber(g), 0, 255)
