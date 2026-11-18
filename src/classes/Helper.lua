@@ -35,14 +35,13 @@ function Helper:build()
             min-height: 500px;
             padding: 40px;
             position: absolute;
-            top: 360px;
             top: 30px;
             width: 630px;
             z-index: 10;
         }
             .help b{
             background: #ffffff;
-            color: rgba(2,52,110, 1);
+            color: rgb(]] .. self.backgroundColor .. [[);
             display: block;
             font-size: 1.1em;
             font-weight: bold;
@@ -86,7 +85,7 @@ function Helper:build()
             <b>]] .. self.translator:get("Triangulation") .. [[</b>
             <label>]] .. self.translator:get("Add reading") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
             <label>]] .. self.translator:get("Show/hide (resets)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
-            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mouse wheel") .. [[</span></br>
+            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mouse wheel") .. [[</span><br/>
             <label>]] .. self.translator:get("Track distance to result") .. [[</label><span> ]] .. key("booster") .. [[</span><br/>
             <b>]] .. self.translator:get("Calibration") .. [[</b>
             <label>]] .. self.translator:get("Calibration mode") .. [[</label><span> ]] .. key("option8") .. [[</span><br/>
