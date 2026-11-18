@@ -34,7 +34,7 @@ local floor, abs, sqrt, min, max, clamp = math.floor, math.abs, math.sqrt, math.
 local function trilaterate(s1, s2, s3, s4)
     local r1s = s1:r2()
     local v2, v3 = s2.center - s1.center, s3.center - s1.center
-    local ax = s2.center:normalize()
+    local ax = v2:normalize()
     local U = v2:len()
     local ay = (v3 - v3:project_on(ax)):normalize()
     local v3x, v3y = v3:dot(ax), v3:dot(ay)
