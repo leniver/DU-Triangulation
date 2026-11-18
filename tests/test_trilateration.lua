@@ -83,3 +83,16 @@ test("needs four readings", function()
     readings[4] = nil
     assertEqual(Trilateration.solve(readings), nil)
 end)
+
+test("returns nil instead of failing on degenerate readings", function()
+    -- All four readings at the same spot: every candidate is NaN.
+    local same = {}
+    for i = 1, 4 do same[i] = Sphere.new(ALIOTH, 100) end
+    assertEqual(Trilateration.solve(same), nil)
+
+    -- Two readings at the same spot.
+    local readings = assistedReadings(ALIOTH, ALIOTH + vec3(30, 20, -100), false)
+    readings[2] = Sphere.new(readings[1].center, readings[1].radius)
+    local result = Trilateration.solve(readings)
+    assertTrue(result == nil or result.x == result.x, "NaN result")
+end)

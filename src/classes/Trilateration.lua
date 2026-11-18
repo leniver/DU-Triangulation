@@ -54,9 +54,9 @@ end
 ---@param s4 Sphere
 ---@param point vec3
 ---@param distance number
----@return boolean
+---@return boolean false as well for a NaN point
 local function isDistanceCloserThan(s1, s2, s3, s4, point, distance)
-    return not (s1:dst(point) > distance or s2:dst(point) > distance or s3:dst(point) > distance or s4:dst(point) > distance)
+    return s1:dst(point) <= distance and s2:dst(point) <= distance and s3:dst(point) <= distance and s4:dst(point) <= distance
 end
 
 --- Finds the point that best matches the readings.
@@ -85,7 +85,9 @@ function Trilateration.solve(points)
         end
     end
 
-    local distance = 10000
+    -- Degenerate readings (e.g. two at the same spot) give NaN or infinite candidates:
+    -- their score is never < math.huge, so they are never picked.
+    local distance = math.huge
     local currentDistance = 0
     for i = 1, #results do
         currentDistance = 0
@@ -98,8 +100,7 @@ function Trilateration.solve(points)
         end
     end
 
-    ---@diagnostic disable-next-line: param-type-mismatch
-    if not isDistanceCloserThan(s1, s2, s3, s4, result, 50) then
+    if result == nil or not isDistanceCloserThan(s1, s2, s3, s4, result, 50) then
         return nil
     end
 
