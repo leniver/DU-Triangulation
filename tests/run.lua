@@ -8,6 +8,7 @@ local files = {
     "trilateration",
     "translations",
     "scanner",
+    "modules",
 }
 
 local cases = {}

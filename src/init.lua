@@ -14,11 +14,11 @@ if DEV_MODE then
     wrapper:reload(load, {
         localDirectory .. "includes/tools",
         localDirectory .. "includes/Wrapper",
+        localDirectory .. "classes/Widget",
         localDirectory .. "classes/Hud",
         localDirectory .. "classes/Helper",
         localDirectory .. "classes/Trilateration",
         localDirectory .. "classes/Scanner",
-        localDirectory .. "classes/Widget",
         localDirectory .. "classes/Translator",
         localDirectory .. "init"
     })
