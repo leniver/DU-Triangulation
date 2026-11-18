@@ -5,8 +5,6 @@
 ---@field handlers {[string] : integer} id of each handler registered on system, by event
 Hud = Class()
 
-local floor, ceil = math.floor, math.ceil
-
 ---@param system System
 function Hud:init(system)
     self.system = system

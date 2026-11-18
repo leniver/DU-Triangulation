@@ -16,7 +16,6 @@
 ---@field shiftDown boolean
 ---@field calibrating boolean the movement keys move the overlay
 ---@field lastError string
----@field lastMessage string
 ---@field offsetLeft number
 ---@field offsetTop number
 ---@field angle number
@@ -24,7 +23,7 @@
 ---@field backgroundColor string
 Scanner = Class(Widget)
 
-local floor, abs, min, clamp = math.floor, math.abs, math.min, Clamp
+local floor, abs, min, clamp = math.floor, math.abs, math.min, Tools.clamp
 
 ---@param system System
 ---@param player Player
@@ -58,7 +57,6 @@ function Scanner:init(system, player, translator)
     self.calibrating = false
 
     self.lastError = nil
-    self.lastMessage = nil
 
     self.offsetLeft = 0
     self.offsetTop = 0
@@ -66,12 +64,12 @@ function Scanner:init(system, player, translator)
     self.fontSize = 12
     self:initializeOffets(false)
 
-    self.backgroundColor = ToRGB(triangulationBackgroundColor)
+    self.backgroundColor = Tools.toRGB(triangulationBackgroundColor)
 end
 
 ---@param displaySettings boolean
 function Scanner:initializeOffets(displaySettings)
-    local offsets, screenSize = getOffsets(self.system, "scanner")
+    local offsets, screenSize = Tools.getOffsets(self.system, "scanner")
 
     if triangulationLeft > 0 then
         self.offsetLeft = triangulationLeft
@@ -135,7 +133,6 @@ function Scanner:clear()
     self.targets = nil
     self.hide = true
     self.lastError = nil
-    self.lastMessage = nil
     self.waypoint = nil
     self.follow = nil
 end
@@ -154,7 +151,7 @@ function Scanner:solve()
 
     self.follow = true
     self.waypoint = result
-    self.system.setWaypoint(ToWaypoint(result), false)
+    self.system.setWaypoint(Tools.toWaypoint(result), false)
 end
 
 --- Shows the scanner and starts the assisted pattern from the player's position.
@@ -185,10 +182,10 @@ function Scanner:show()
     local p2 = p1 + side * increment
     local p3 = p2 + vertical * increment + side * 5
     self.targets = {
-        ToWaypoint(position),
-        ToWaypoint(p1),
-        ToWaypoint(p2),
-        ToWaypoint(p3)
+        Tools.toWaypoint(position),
+        Tools.toWaypoint(p1),
+        Tools.toWaypoint(p2),
+        Tools.toWaypoint(p3)
     }
     self.waypoint = nil
     self.system.setWaypoint(self.targets[1], false)

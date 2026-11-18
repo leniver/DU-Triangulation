@@ -13,7 +13,7 @@ function Helper:init(system, translator)
     self.system = system
     self.version = "1.0.0"
     self.translator = translator
-    self.backgroundColor = ToRGB(baseColor)
+    self.backgroundColor = Tools.toRGB(baseColor)
 
     self.open = false
 end

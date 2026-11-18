@@ -1,37 +1,8 @@
-local floor, random = math.floor, math.random
-local abs, sqrt, pi, acos, atan, deg = math.abs, math.sqrt, math.pi, math.acos, math.atan, math.deg
-local min, max = math.min, math.max
+local floor, min, max = math.floor, math.min, math.max
 local match, format = string.match, string.format
 
----@param t table
----@param fnKeep function
----@return table
-function ArrayRemove(t, fnKeep)
-    local j, n = 1, #t;
-
-    for i=1,n do
-        if (fnKeep(t, i, j)) then
-            -- Move i's kept value to j's position, if it's not already there.
-            if (i ~= j) then
-                t[j] = t[i];
-                t[i] = nil;
-            end
-            j = j + 1; -- Increment position of where we'll place the next kept value.
-        else
-            t[i] = nil;
-        end
-    end
-
-    return t;
-end
-
---- Don't forget to call math.randomseed at initialization
----@param n number
----@return integer
-function Rand(n)
-    return floor(random() * n)
-end
-
+--- Helpers shared by the classes, in one global table.
+Tools = {}
 
 local defaultOffsets = {
     ["default"] = {
@@ -134,7 +105,7 @@ local defaultOffsets = {
 
 ---@param system System
 ---@param category? string
-function getOffsets(system, category)
+function Tools.getOffsets(system, category)
     local screenSize = format("%sx%s", system.getScreenWidth(), system.getScreenHeight())
     local offsets = defaultOffsets["default"]
 
@@ -147,26 +118,37 @@ function getOffsets(system, category)
     return offsets,screenSize
 end
 
-function ToWaypoint(vector, bodyId)
+--- The waypoint string ("::pos{...}") of a position in world coordinates.
+---@param vector vec3
+---@param bodyId? integer
+---@return string
+function Tools.toWaypoint(vector, bodyId)
     return [[::pos{0,]] .. (bodyId or 0) .. [[,]] .. 
     (floor(vector.x * 100000) / 100000) .. [[,]] .. 
     (floor(vector.y * 100000) / 100000) .. [[,]] ..
     (floor(vector.z * 100000) / 100000) .. [[}]]
 end
 
-function Clamp(value, minValue, maxValue)
+---@param value number
+---@param minValue number
+---@param maxValue number
+---@return number
+function Tools.clamp(value, minValue, maxValue)
     return max(min(value, maxValue), minValue)
 end
 
-function ToRGB(color)
+--- "R G B" (a Lua parameter) to "R,G,B" for CSS; a dark blue when the text isn't three numbers.
+---@param color string
+---@return string
+function Tools.toRGB(color)
     local r, g, b = match(color, "(%d+) (%d+) (%d+)")
     if r == nil or g == nil or b == nil then
         r = 2
         g = 52
         b = 110
     end
-    r = Clamp(tonumber(r), 0, 255)
-    g = Clamp(tonumber(g), 0, 255)
-    b = Clamp(tonumber(b), 0, 255)
+    r = Tools.clamp(tonumber(r), 0, 255)
+    g = Tools.clamp(tonumber(g), 0, 255)
+    b = Tools.clamp(tonumber(b), 0, 255)
     return format("%d,%d,%d", r, g, b)
 end

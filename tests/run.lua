@@ -10,6 +10,7 @@ local files = {
     "scanner",
     "modules",
     "hud",
+    "tools",
 }
 
 local cases = {}
