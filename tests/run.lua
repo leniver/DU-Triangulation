@@ -66,6 +66,30 @@ function Random(seed)
     end
 end
 
+-- Strict globals: assigning a global that isn't declared here fails the tests, which catches a
+-- missing "local" in the code they run. The Lua parameters are read from src/parameters.lua.
+local declaredGlobals = {
+    -- Defined by the program
+    "DEV_MODE", "DEV_MODULES", "DUUnit", "localDirectory", "wrapper", "App", "Tools", "Class", "Wrapper",
+    "Widget", "Hud", "Helper", "Sphere", "Trilateration", "Scanner", "Translator", "BoardWaypoint",
+    -- Defined by the tests
+    "vec3", "loadWidgets", "FakeSystem", "FakePlayer", "FakeConstruct", "WaypointPosition",
+}
+local declared = {}
+for _, name in ipairs(declaredGlobals) do declared[name] = true end
+for line in readFile("src/parameters.lua"):gmatch("[^\n]+") do
+    local name = line:match("^([%a_][%w_]*)%s*=")
+    if name then declared[name] = true end
+end
+setmetatable(_G, {
+    __newindex = function(globals, name, value)
+        if not declared[name] then
+            error("assignment to the undeclared global '" .. tostring(name) .. "' (missing 'local'?)", 2)
+        end
+        rawset(globals, name, value)
+    end,
+})
+
 dofile(ROOT .. "/tests/vec3.lua")
 
 for _, name in ipairs(files) do
