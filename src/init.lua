@@ -10,7 +10,7 @@ end
 
 wrapper = Wrapper.new(DUUnit, DUSystem, DULibrary)
 
-if debug then
+if DEV_MODE then
     wrapper:reload(load, {
         localDirectory .. "includes/tools",
         localDirectory .. "includes/Wrapper",
