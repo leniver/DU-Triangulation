@@ -2,8 +2,7 @@
 ---@field points Sphere[]
 ---@field targets? string[]
 ---@field distance number
----@field limit number
----@field range boolean
+---@field problem string|nil why no reading can be taken here: "close", "line" or "plane"
 ---@field system System
 ---@field translator Translator
 ---@field player Player
@@ -14,67 +13,36 @@
 ---@field selected string[]
 ---@field altDown boolean
 ---@field shiftDown boolean
----@field frozen boolean
+---@field calibrating boolean the movement keys move the overlay
 ---@field lastError string
----@field lastMessage string
 ---@field offsetLeft number
 ---@field offsetTop number
 ---@field angle number
 ---@field fontSize number
 ---@field backgroundColor string
+---@field style string the overlay's CSS, built by updateStyle()
+---@field hiddenOutput {style: string, html: string} what render() returns while hidden
 Scanner = Class(Widget)
 
-local floor, abs, sqrt, min, max, clamp = math.floor, math.abs, math.sqrt, math.min, math.max, Clamp
+local floor, abs, min, clamp = math.floor, math.abs, math.min, Tools.clamp
 
----@param s1 Sphere
----@param s2 Sphere
----@param s3 Sphere
----@param s4 Sphere
----@return vec3
-local function trilaterate(s1, s2, s3, s4)
-    local r1s = s1:r2()
-    local v2, v3 = s2.center - s1.center, s3.center - s1.center
-    local ax = s2.center:normalize()
-    local U = v2:len()
-    local ay = (v3 - v3:project_on(ax)):normalize()
-    local v3x, v3y = v3:dot(ax), v3:dot(ay)
-    local vs = v3x * v3x + v3y * v3y
-    local x = (r1s - s2:r2() + U * U) / (2 * U)
-    local y = (r1s - s3:r2() + vs - 2 * v3x * x) / (2 * v3y)
-    local m = r1s - (x ^ 2) - (y ^ 2)
-    if m < 0.0000001 then m = 0 end
-    local axx, ayy, azz = ax * x, ay * y, ax:cross(ay) * sqrt(m)
-    local t1 = s1.center + axx + ayy + azz
-    local t2 = s1.center + axx + ayy - azz
+local MAX_DISTANCE = 480 -- range of the game's scanner, in metres: the slider goes from 0 to this
+local START_DISTANCE = 250 -- distance on the slider when the script starts
+local MIN_SPACING = 20 -- minimum distance between two readings, in metres ("Too close")
+-- The assisted readings are at least 5 m further apart than MIN_SPACING, so that a reading taken
+-- a few metres short of its waypoint isn't refused as "Too close".
+local ASSISTED_MIN, ASSISTED_MAX = MIN_SPACING + 5, 50
+local ASSISTED_SIDE_STEP = 5 -- the 4th assisted waypoint is also moved this far to the side, in metres
+local FAST_SCROLL = 5 -- the mouse wheel moves the slider this many times faster while Shift is held
+local GAUGE_HEIGHT = 28.5 -- height of the game's scanner gauge, in % of the screen height (vh)
+local SLIDER_OFFSET = 3 -- moves the slider's glyph onto its height, in % of the gauge
 
-    ---@diagnostic disable-next-line: return-type-mismatch, param-type-mismatch
-    return (s4:dst(t1) < s4:dst(t2) and t1) or t2
-end
-
----@param s1 Sphere
----@param s2 Sphere
----@param s3 Sphere
----@param s4 Sphere
----@param results? vec3[]
-local function buildTrialaterationSet(s1, s2, s3, s4, results)
-    results = results or {}
-    results[#results + 1] = trilaterate(s1, s2, s3, s4)
-    results[#results + 1] = trilaterate(s2, s3, s4, s1)
-    results[#results + 1] = trilaterate(s3, s4, s1, s2)
-    results[#results + 1] = trilaterate(s4, s1, s2, s3)
-
-    return results
-end
-
----@param s1 Sphere
----@param s2 Sphere
----@param s3 Sphere
----@param s4 Sphere
----@param point vec3
----@param distance number
----@return boolean
-local function isDistanceCloserThan(s1, s2, s3, s4, point, distance)
-    return not (s1:dst(point) > distance or s2:dst(point) > distance or s3:dst(point) > distance or s4:dst(point) > distance)
+--- Height of the slider for a distance, in % of the gauge from its bottom. The game's gauge isn't
+--- linear; this curve follows it (0 m: 0 %, 240 m: 54 %, 480 m: 95 %).
+---@param distance number in metres
+---@return number
+local function sliderHeight(distance)
+    return 0.02 + 0.253 * distance - 1.13E-04 * distance ^ 2
 end
 
 ---@param system System
@@ -83,14 +51,10 @@ end
 function Scanner:init(system, player, translator)
     self.points = {}
     self.targets = nil
-    self.distance = 250
-
-
-    self.limit = 20
-    self.range = true
+    self.distance = START_DISTANCE
+    self.problem = nil
 
     self.system = system
-    self.system.showScreen(true)
     self.translator = translator
     self.player = player
     self.hide = true
@@ -107,25 +71,29 @@ function Scanner:init(system, player, translator)
 
     self.altDown = false
     self.shiftDown = false
-    self.frozen = false
+    self.calibrating = false
 
     self.lastError = nil
-    self.lastMessage = nil
 
-    self.offsetLeft = 0
-    self.offsetTop = 0
-    self.angle = 15.85
-    self.fontSize = 12
+    self.backgroundColor = Tools.toRGB(triangulationBackgroundColor)
     self:initializeOffets(false)
 
-    self.backgroundColor = ToRGB(triangulationBackgroundColor)
-
-    self:initEvents()
+    self.hiddenOutput = {
+        style = [[
+            .triangulation-hidden {
+            font-size: 12px;
+            left: 10px;
+            position: absolute;
+            top: 25px;
+        }
+            ]],
+        html = [[<div class="triangulation-hidden">]] .. translator:get("Triangulation hidden") .. [[</div>]]
+    }
 end
 
 ---@param displaySettings boolean
 function Scanner:initializeOffets(displaySettings)
-    local offsets, screenSize = getOffsets("scanner")
+    local offsets, screenSize = Tools.getOffsets(self.system, "scanner")
 
     if triangulationLeft > 0 then
         self.offsetLeft = triangulationLeft
@@ -152,30 +120,30 @@ function Scanner:initializeOffets(displaySettings)
     end
 
     if displaySettings then
-        self.system.print([[====== Triangulation settings ======]])
-        self.system.print([[Screen resolution: ]] .. screenSize)
-        self.system.print([[Left offset: ]] .. self.offsetLeft .. "px")
-        self.system.print([[Offset top: ]] .. self.offsetTop .. "px")
-        self.system.print([[Font size: ]] .. self.fontSize .. "px")
-        self.system.print([[Angle: ]] .. self.angle .. "°")
-        self.system.print([[==================================]])
+        local t = self.translator
+        self.system.print("====== " .. t:get("Triangulation settings") .. " ======")
+        self.system.print(t:get("Screen resolution: %s", screenSize))
+        self.system.print(t:get("Left offset: %s px", self.offsetLeft))
+        self.system.print(t:get("Top offset: %s px", self.offsetTop))
+        self.system.print(t:get("Font size: %s px", self.fontSize))
+        self.system.print(t:get("Angle: %s°", self.angle))
+        self.system.print("==================================")
     end
+
+    self:updateStyle()
 end
 
 function Scanner:add()
-    if self.range then
+    if self.problem == nil then
         local size = #self.points
         self.lastError = nil
         if size < 5 then
-            self.points[size + 1] = Sphere.new(self.position, self.distance)
+            self.points[size + 1] = Sphere:new(self.position, self.distance)
             size = size + 1
         elseif (self.distance < self.points[5].radius) then
-            self.points[5] = Sphere.new(self.position, self.distance)
+            self.points[5] = Sphere:new(self.position, self.distance)
         end
-        if size == 4 then
-            self:solve()
-            self.targets = nil
-        elseif size > 4 then
+        if size >= 4 then
             self:solve()
         elseif self.targets ~= nil then
             self.system.setWaypoint(self.targets[min(#self.points + 1, 4)], false)
@@ -188,136 +156,145 @@ function Scanner:clear()
     self.targets = nil
     self.hide = true
     self.lastError = nil
-    self.lastMessage = nil
     self.waypoint = nil
-    self.follow = nil
+    self.follow = false
 end
 
 function Scanner:solve()
-    local size = #self.points
-    if size >= 4 then
-        local result = nil
-        local s1 = self.points[1]
-        local s2 = self.points[2]
-        local s3 = self.points[3]
-        local s4 = self.points[4]
-
-        local results = buildTrialaterationSet(s1, s2, s3, s4)
-
-        if size > 4 then
-            local addResults = buildTrialaterationSet(self.points[5], s1, s2, s3)
-            buildTrialaterationSet(self.points[5], s2, s3, s4, addResults)
-            buildTrialaterationSet(self.points[5], s3, s4, s1, addResults)
-            buildTrialaterationSet(self.points[5], s4, s1, s2, addResults)
-            for j = 1, #addResults do
-                if isDistanceCloserThan(s1, s2, s3, s4, addResults[j], 50) then
-                    results[#results + 1] = addResults[j]
-                end
-            end
-        end
-
-        local distance = 10000
-        local currentDistance = 0
-        for i = 1, #results do
-            currentDistance = 0
-            for j = 1, size do
-                currentDistance = currentDistance + self.points[j]:dst(results[i])
-            end
-            if currentDistance < distance then
-                result = results[i]
-                distance = currentDistance
-            end
-        end
-
-        if not isDistanceCloserThan(s1, s2, s3, s4, result, 50) then
-            self.points = {}
-            self.lastError = self.translator:get("Triangulation failed")
-            return false
-        end
-
-        self.follow = true
-        self.waypoint = result
-        local waypoint = ToWaypoint(result)
-        self.system.setWaypoint(waypoint, false)
+    if #self.points < 4 then
+        return
     end
+
+    local result = Trilateration.solve(self.points)
+    if result == nil then
+        self.points = {}
+        self.lastError = self.translator:get("Triangulation failed")
+        if self.targets ~= nil then
+            -- Start the assisted pattern again.
+            self.system.setWaypoint(self.targets[1], false)
+        end
+        return false
+    end
+
+    self.targets = nil
+    self.follow = true
+    self.waypoint = result
+    self.system.setWaypoint(Tools.toWaypoint(result), false)
 end
 
-function Scanner:initEvents()
-    ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onUpdate", function()
-        self:onUpdate()
-    end)
+--- Shows the scanner and starts the assisted pattern from the player's position.
+function Scanner:show()
+    self:clear()
+    self.hide = false
+    self:initializeOffets(true)
+
+    local position = vec3(self.player.getWorldPosition())
+    local increment = clamp(assistedTriangulationDistance, ASSISTED_MIN, ASSISTED_MAX)
+
+    -- Lay the pattern out on the horizontal plane: the player's up is the planet's vertical,
+    -- and the camera only gives the heading, whatever its pitch.
+    local vertical = vec3(self.player.getWorldUp()):normalize()
+    local look = vec3(self.system.getCameraWorldForward())
+    local forward = look - vertical * look:dot(vertical)
+    if forward:len() < 0.1 then
+        -- Looking (almost) straight up or down: use the way the player faces.
+        local facing = vec3(self.player.getWorldForward())
+        forward = facing - vertical * facing:dot(vertical)
+    end
+    forward = forward:normalize()
+    local side = vertical:cross(forward)
+
+    local p1 = position + forward * increment
+    local p2 = p1 + side * increment
+    local p3 = p2 + vertical * increment + side * ASSISTED_SIDE_STEP
+    self.targets = {
+        Tools.toWaypoint(position),
+        Tools.toWaypoint(p1),
+        Tools.toWaypoint(p2),
+        Tools.toWaypoint(p3)
+    }
+    self.waypoint = nil
+    self.system.setWaypoint(self.targets[1], false)
 end
 
 ---@param action string
 function Scanner:onActionStart(action)
+    -- Modifier keys are tracked even while hidden, so their state is right once the scanner is shown.
+    if action == "lshift" then
+        self.shiftDown = true
+        return
+    elseif action == "lalt" then
+        self.altDown = true
+        return
+    end
+
     if action == "speeddown" then
         if self.hide then
-            self:clear()
-            self.hide = false
-            self:initializeOffets(true)
-
-            local position = vec3(self.player.getWorldPosition())
-            local increment = min(max(assistedTriangulationDistance, 15), 50)
-
-            local forwardVec = vec3(self.system.getCameraWorldForward())
-            local rightVec = vec3(self.system.getCameraWorldRight())
-            local verticalVec = vec3(self.system.getCameraWorldUp())
-
-            local forward = verticalVec:cross(rightVec):normalize()
-            local right = verticalVec:cross(forwardVec):normalize()
-            local vertical = verticalVec:normalize()
-
-            local p1 = position + forward * increment
-            local p2 = p1 + right * increment
-            local p3 = p2 + vertical * increment + right * 5
-            self.targets = {
-                ToWaypoint(position),
-                ToWaypoint(p1),
-                ToWaypoint(p2),
-                ToWaypoint(p3)
-            }
-            self.waypoint = nil
-            self.system.setWaypoint(self.targets[1], false)
+            self:show()
         else
             self:clear()
         end
-    elseif action == "option9" then
-        self.frozen = not self.frozen
+        return
+    end
+
+    -- The other keys only act on the shown scanner.
+    if self.hide then
+        return
+    end
+
+    if action == "option8" then
+        self:toggleCalibration()
     elseif action == "speedup" then
         self:add()
     elseif action == "booster" then
         self.follow = not self.follow
-    elseif action == "lshift" then
-        self.shiftDown = true
-    elseif action == "lalt" then
-        self.altDown = true
     end
-    if self.frozen then
-        if self.altDown then
-            if action == "up" then
-                self.angle = self.angle - 0.01
-                self.system.print("Angle: " .. self.angle)
-            elseif action == "down" then
-                self.angle = self.angle + 0.01
-                self.system.print("Angle: " .. self.angle)
-            end
-        else
-            if action == "up" then
-                self.offsetTop = self.offsetTop - 1
-                self.system.print("Offset top: " .. self.offsetTop)
-            elseif action == "down" then
-                self.offsetTop = self.offsetTop + 1
-                self.system.print("Offset top: " .. self.offsetTop)
-            elseif action == "strafeleft" then
-                self.offsetLeft = self.offsetLeft - 1
-                self.system.print("Offset left: " .. self.offsetLeft)
-            elseif action == "straferight" then
-                self.offsetLeft = self.offsetLeft + 1
-                self.system.print("Offset left: " .. self.offsetLeft)
-            end
+    if self.calibrating then
+        self:calibrate(action)
+    end
+end
+
+--- Turns the calibration mode on or off. When it ends, prints the values to copy into the Lua parameters.
+function Scanner:toggleCalibration()
+    self.calibrating = not self.calibrating
+    if self.calibrating then
+        self.system.print(self.translator:get("Calibration on: see the help for the keys"))
+    else
+        self.system.print(self.translator:get("Calibration off. To keep it, set these Lua parameters:"))
+        self.system.print("triangulationLeft = " .. self.offsetLeft)
+        self.system.print("triangulationTop = " .. self.offsetTop)
+        self.system.print("triangulationAngle = " .. self.angle)
+    end
+end
+
+--- Moves or skews the overlay, to align it with the game's scanner gauge.
+---@param action string
+function Scanner:calibrate(action)
+    if self.altDown then
+        -- Rounded to the hundredth, so that repeated steps don't add up floating-point errors.
+        if action == "up" then
+            self.angle = floor((self.angle - 0.01) * 100 + 0.5) / 100
+            self.system.print(self.translator:get("Angle: %s°", self.angle))
+        elseif action == "down" then
+            self.angle = floor((self.angle + 0.01) * 100 + 0.5) / 100
+            self.system.print(self.translator:get("Angle: %s°", self.angle))
+        end
+    else
+        if action == "up" then
+            self.offsetTop = self.offsetTop - 1
+            self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
+        elseif action == "down" then
+            self.offsetTop = self.offsetTop + 1
+            self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
+        elseif action == "strafeleft" then
+            self.offsetLeft = self.offsetLeft - 1
+            self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
+        elseif action == "straferight" then
+            self.offsetLeft = self.offsetLeft + 1
+            self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
         end
     end
+    self:updateStyle()
 end
 
 ---@param action string
@@ -333,11 +310,11 @@ function Scanner:onUpdate()
     if not self.hide then
         local throttle = self.system.getThrottleInputFromMouseWheel();
         if self.shiftDown then
-            throttle = clamp(throttle * 5, -5, 5)
+            throttle = clamp(throttle * FAST_SCROLL, -FAST_SCROLL, FAST_SCROLL)
         end
         self.position = vec3(self.player.getWorldPosition())
-        self.range = self:checkRange()
-        self.distance = clamp(floor(self.distance + (throttle * 1)), 0, 480)
+        self.problem = self:checkPosition()
+        self.distance = clamp(floor(self.distance + throttle), 0, MAX_DISTANCE)
 
         if abs(throttle) > 0 then
             self.lastError = nil
@@ -350,35 +327,25 @@ function Scanner:onUpdate()
     end
 end
 
-function Scanner:checkRange()
+--- Why no reading can be taken at the current position, or nil when one can.
+---@return string|nil problem "close" (too close to an earlier reading), "line" or "plane" (see Trilateration.checkNextReading)
+function Scanner:checkPosition()
     for i = 1, #self.points do
-        if (self.points[i].center - self.position):len() < self.limit then
-            return false
+        if (self.points[i].center - self.position):len() < MIN_SPACING then
+            return "close"
         end
     end
-    return true
+    return Trilateration.checkNextReading(self.points, self.position)
 end
 
-function Scanner:render()
-    if self.hide then
-        return { style = "", html = "Triangulation hidden" }
-    else
-        local top = 0.02 + 0.253 * self.distance + -1.13E-04 * (self.distance ^ 2)
-        local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]
-
-        if self.lastError ~= nil then
-            status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
-        elseif not self.range then
-            status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
-        end
-
-        return {
-            style = [[
+--- Builds the overlay's CSS. Called when the offsets, font size or angle change, not every frame.
+function Scanner:updateStyle()
+    self.style = [[
             #triangulation {
-            border-bottom: 28.5vh solid rgba(]] .. self.backgroundColor .. [[,.25);
+            border-bottom: ]] .. GAUGE_HEIGHT .. [[vh solid rgba(]] .. self.backgroundColor .. [[,.25);
             border-right: 1vw solid transparent;
             font-size: ]] .. self.fontSize .. [[px;
-            height: 28.5vh;
+            height: ]] .. GAUGE_HEIGHT .. [[vh;
             left: 50%;
             margin-left: ]] .. self.offsetLeft .. [[px;
             margin-top: ]] .. self.offsetTop .. [[px;
@@ -392,7 +359,6 @@ function Scanner:render()
             color:#eca943;
                 display: block;
             left: -8px;
-            top: ]] .. (28.5 / 100 * (100 - top - 3)) .. [[vh;
             position: absolute;
         }
             #triangulation .slider i{
@@ -414,20 +380,46 @@ function Scanner:render()
             #triangulation .status.error{
             color: red;
         }
+            #triangulation .status.calibration{
+            color: #498aff;
+        }
             #triangulation p{
                 display: block;
                 position: absolute;
                 text-align: right;
-                top: calc(28.5vh + 5px);
+                top: calc(]] .. GAUGE_HEIGHT .. [[vh + 5px);
                 width: 100%;
             }
-         ]],
-            html = [[
+         ]]
+end
+
+function Scanner:render()
+    if self.hide then
+        return self.hiddenOutput
+    end
+
+    local sliderTop = GAUGE_HEIGHT / 100 * (100 - sliderHeight(self.distance) - SLIDER_OFFSET)
+    local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]
+
+    if self.lastError ~= nil then
+        status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
+    elseif self.calibrating then
+        status = [[<span class="status calibration">]] .. self.translator:get("Calibration") .. [[</span>]]
+    elseif self.problem == "close" then
+        status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
+    elseif self.problem == "line" then
+        status = [[<span class="status error">]] .. self.translator:get("Move sideways") .. [[</span>]]
+    elseif self.problem == "plane" then
+        status = [[<span class="status error">]] .. self.translator:get("Move up or down") .. [[</span>]]
+    end
+
+    return {
+        style = self.style,
+        html = [[
         <div id="triangulation">	 	
         ]] .. status .. [[
-        <div class="slider">◯<span>━━[ <i>]] .. self.distance .. [[</i> ]</span></div>
+        <div class="slider" style="top: ]] .. sliderTop .. [[vh">◯<span>━━[ <i>]] .. self.distance .. [[</i> ]</span></div>
         <p>]] .. self.selected[min(#self.points, 4)] .. [[</p>
         </div>]]
-        }
-    end
+    }
 end

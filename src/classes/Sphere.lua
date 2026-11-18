@@ -1,21 +1,15 @@
----@class Sphere
+---@class Sphere : Class
 ---@field center vec3
 ---@field radius number
-Sphere = {}
-Sphere.__index = Sphere
+Sphere = Class()
 
 local abs = math.abs
 
 ---@param center vec3
 ---@param radius number
----@return Sphere
-function Sphere.new(center, radius)
-    local self = setmetatable({}, Sphere)
-
+function Sphere:init(center, radius)
     self.center = center
     self.radius = radius
-
-    return self
 end
 
 

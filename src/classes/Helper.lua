@@ -4,23 +4,25 @@
 ---@field translator Translator
 ---@field backgroundColor string
 ---@field open boolean
+---@field output {style: string, html: string} what render() returns; rebuilt when the help opens or closes
 Helper = Class(Widget)
-
 
 ---@param system System
 ---@param translator Translator
----@return Helper
 function Helper:init(system, translator)
     self.system = system
-    self.version = "1.0.0"
+    self.version = "1.1.0"
     self.translator = translator
-    self.backgroundColor = ToRGB(baseColor)
+    self.backgroundColor = Tools.toRGB(baseColor)
 
     self.open = false
+    self.output = self:build()
 end
 
-
-function Helper:render()
+--- What the help shows, open or closed. Built when it opens or closes, which also picks up the
+--- player's current key bindings.
+---@return {style: string, html: string}
+function Helper:build()
     if self.open then
         local key = self.system.getActionKeyName
         return {
@@ -33,14 +35,13 @@ function Helper:render()
             min-height: 500px;
             padding: 40px;
             position: absolute;
-            top: 360px;
             top: 30px;
             width: 630px;
             z-index: 10;
         }
             .help b{
             background: #ffffff;
-            color: rgba(2,52,110, 1);
+            color: rgb(]] .. self.backgroundColor .. [[);
             display: block;
             font-size: 1.1em;
             font-weight: bold;
@@ -82,13 +83,20 @@ function Helper:render()
             html = [[
             <div class="help">
             <b>]] .. self.translator:get("Triangulation") .. [[</b>
-            <label>]] .. self.translator:get("Add step") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
-            <label>]] .. self.translator:get("Show/Hide(reset)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
-            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mousewheel") .. [[</span></br>
+            <label>]] .. self.translator:get("Add reading") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
+            <label>]] .. self.translator:get("Show/hide (resets)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
+            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mouse wheel") .. [[</span><br/>
+            <label>]] .. self.translator:get("Track distance to result") .. [[</label><span> ]] .. key("booster") .. [[</span><br/>
+            <b>]] .. self.translator:get("Calibration") .. [[</b>
+            <label>]] .. self.translator:get("Calibration mode") .. [[</label><span> ]] .. key("option8") .. [[</span><br/>
+            <label>]] .. self.translator:get("Move overlay up/down") .. [[</label><span> ]] .. key("up") .. [[ / ]] .. key("down") .. [[</span><br/>
+            <label>]] .. self.translator:get("Move overlay left/right") .. [[</label><span> ]] .. key("strafeleft") .. [[ / ]] .. key("straferight") .. [[</span><br/>
+            <label>]] .. self.translator:get("Adjust angle") .. [[</label><span> ]] .. key("lalt") .. [[ + ]] .. key("up") .. [[ / ]] .. key("down") .. [[</span><br/>
             <b>]] .. self.translator:get("Miscellaneous") .. [[</b>
+            <label>]] .. self.translator:get("Waypoint to the board") .. [[</label><span> ]] .. key("option7") .. [[</span><br/>
             <label>]] .. self.translator:get("Hide help") .. [[</label><span> ]] .. key("option9") .. [[</span><br/>
             </div>
-            <small class="version">Version ]] .. self.version .. [[ - &copy; Leniver</small>]],
+            <small class="version">]] .. self.translator:get("Version %s", self.version) .. [[ - &copy; Leniver</small>]],
         }
     else
         return {
@@ -111,16 +119,21 @@ function Helper:render()
             ]],
             html = [[
             <div class="help">
-            Show help: ]] .. self.system.getActionKeyName("option9") ..[[<br/>
+            ]] .. self.translator:get("Show help: %s", self.system.getActionKeyName("option9")) .. [[<br/>
             </div>
-            <small class="version">Version ]] .. self.version .. [[ - &copy; Leniver</small>]],
+            <small class="version">]] .. self.translator:get("Version %s", self.version) .. [[ - &copy; Leniver</small>]],
         }
     end
 end
 
+function Helper:render()
+    return self.output
+end
 
+---@param action string
 function Helper:onActionStart(action)
     if action == "option9" then
         self.open = not self.open
+        self.output = self:build()
     end
 end

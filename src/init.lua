@@ -1,26 +1,9 @@
--- This is where you initialize your program
-local load = function()
-    DUUnit.hideWidget()
-    --triangulationBackgroundColor = "3 8 7"
-    local hud = Hud.new(DUSystem)
-    local translator = Translator.new()
-    hud:addWidget(Scanner:new(DUSystem, DUPlayer, translator))
-    hud:addWidget(Helper:new(DUSystem, translator))
-end
+-- Starts the program.
+wrapper = Wrapper:new(DUUnit, DUSystem)
 
-wrapper = Wrapper.new(DUUnit, DUSystem, DULibrary)
-
-if debug then
-    wrapper:reload(load, {
-        localDirectory .. "includes/tools",
-        localDirectory .. "includes/Wrapper",
-        localDirectory .. "classes/Hud",
-        localDirectory .. "classes/Helper",
-        localDirectory .. "classes/Scanner",
-        localDirectory .. "classes/Widget",
-        localDirectory .. "classes/Translator",
-        localDirectory .. "init"
-    })
+if DEV_MODE then
+    -- App.start is looked up at each start, so that a reloaded app.lua takes effect.
+    wrapper:reload(function() return App.start() end, DEV_MODULES)
 else
-    load()
+    App.start()
 end

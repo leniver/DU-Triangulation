@@ -1,47 +1,13 @@
-local floor, random = math.floor, math.random
-local abs, sqrt, pi, acos, atan, deg = math.abs, math.sqrt, math.pi, math.acos, math.atan, math.deg
-local min, max = math.min, math.max
+local floor, min, max = math.floor, math.min, math.max
 local match, format = string.match, string.format
 
----@param t table
----@param fnKeep function
----@return table
-function ArrayRemove(t, fnKeep)
-    local j, n = 1, #t;
+--- Helpers shared by the classes, in one global table.
+Tools = {}
 
-    for i=1,n do
-        if (fnKeep(t, i, j)) then
-            -- Move i's kept value to j's position, if it's not already there.
-            if (i ~= j) then
-                t[j] = t[i];
-                t[i] = nil;
-            end
-            j = j + 1; -- Increment position of where we'll place the next kept value.
-        else
-            t[i] = nil;
-        end
-    end
+local DEFAULT_COLOR = { 2, 52, 110 } -- dark blue, for a colour parameter that isn't "R G B"
 
-    return t;
-end
-
---- Don't forget to call math.randomseed at initialization
----@param n number
----@return integer
-function Rand(n)
-    return floor(random() * n)
-end
-
-
-local defaultOffsets = {
-    ["default"] = {
-        scanner = {
-            left = 282,
-            top = 24,
-            size = 13,
-            angle = 13.6,
-        }
-    },
+--- Overlay offsets calibrated in game, by screen resolution.
+local calibratedOffsets = {
     ["1920x2160"] = {
         scanner = {
             left = 658,
@@ -90,7 +56,7 @@ local defaultOffsets = {
             angle = 13.6,
         }
     },
-    ["1650x1050"] = {
+    ["1680x1050"] = {
         scanner = {
             left = 274,
             top = 22,
@@ -132,39 +98,72 @@ local defaultOffsets = {
     },
 }
 
-function getOffsets(category)
-    local screenSize = format("%sx%s", DUSystem.getScreenWidth(),DUSystem.getScreenHeight())
-    local offsets = defaultOffsets["default"]
-
-    if defaultOffsets[screenSize] ~= nil then
-        offsets = defaultOffsets[screenSize]
+--- The 1920x1080 offsets scaled to a screen height: the game's HUD scales with the screen height,
+--- and the calibrated entries follow that scale within a few pixels.
+---@param height number
+local function scaledOffsets(height)
+    local scale = height / 1080
+    local offsets = {}
+    for category, values in pairs(calibratedOffsets["1920x1080"]) do
+        offsets[category] = {
+            left = floor(values.left * scale + 0.5),
+            top = floor(values.top * scale + 0.5),
+            size = floor(values.size * scale + 0.5),
+            angle = values.angle,
+        }
     end
-    if category ~= nil then
-        return offsets[category],screenSize
-    end
-    return offsets,screenSize
+    return offsets
 end
 
-function ToWaypoint(vector, bodyId)
+--- Overlay offsets for the screen resolution: its calibrated entry, or else the 1920x1080 values
+--- scaled to the screen height (e.g. in windowed mode, where the height depends on the taskbar).
+---@param system System
+---@param category? string
+---@return table offsets
+---@return string screenSize "<width>x<height>"
+function Tools.getOffsets(system, category)
+    local height = system.getScreenHeight()
+    local screenSize = format("%sx%s", system.getScreenWidth(), height)
+    local offsets = calibratedOffsets[screenSize]
+    if offsets == nil then
+        offsets = scaledOffsets(height > 0 and height or 1080)
+    end
+
+    if category ~= nil then
+        return offsets[category], screenSize
+    end
+    return offsets, screenSize
+end
+
+--- The waypoint string ("::pos{...}") of a position in world coordinates.
+---@param vector vec3
+---@param bodyId? integer
+---@return string
+function Tools.toWaypoint(vector, bodyId)
     return [[::pos{0,]] .. (bodyId or 0) .. [[,]] .. 
     (floor(vector.x * 100000) / 100000) .. [[,]] .. 
     (floor(vector.y * 100000) / 100000) .. [[,]] ..
     (floor(vector.z * 100000) / 100000) .. [[}]]
 end
 
-function Clamp(value, minValue, maxValue)
+---@param value number
+---@param minValue number
+---@param maxValue number
+---@return number
+function Tools.clamp(value, minValue, maxValue)
     return max(min(value, maxValue), minValue)
 end
 
-function ToRGB(color)
+--- "R G B" (a Lua parameter) to "R,G,B" for CSS; a dark blue when the text isn't three numbers.
+---@param color string
+---@return string
+function Tools.toRGB(color)
     local r, g, b = match(color, "(%d+) (%d+) (%d+)")
     if r == nil or g == nil or b == nil then
-        r = 2
-        g = 52
-        b = 110
+        r, g, b = DEFAULT_COLOR[1], DEFAULT_COLOR[2], DEFAULT_COLOR[3]
     end
-    r = Clamp(tonumber(r), 0, 255)
-    g = Clamp(tonumber(g), 0, 255)
-    b = Clamp(tonumber(b), 0, 255)
+    r = Tools.clamp(tonumber(r), 0, 255)
+    g = Tools.clamp(tonumber(g), 0, 255)
+    b = Tools.clamp(tonumber(b), 0, 255)
     return format("%d,%d,%d", r, g, b)
 end
