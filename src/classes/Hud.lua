@@ -2,6 +2,7 @@
 ---@field system System
 ---@field widgets Widget[]
 ---@field widgetCount number
+---@field handlers {[string] : integer} id of each handler registered on system, by event
 Hud = Class()
 
 local floor, ceil = math.floor, math.ceil
@@ -25,22 +26,32 @@ end
 
 --- The Hud is the only one listening to the game's events: it passes them on to its widgets.
 function Hud:initEvents()
+    self.handlers = {}
     ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onActionStart", function(_, action)
+    self.handlers.onActionStart = self.system:onEvent("onActionStart", function(_, action)
         for i = 1, self.widgetCount do
             self.widgets[i]:onActionStart(action)
         end
     end)
     ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onActionStop", function(_, action)
+    self.handlers.onActionStop = self.system:onEvent("onActionStop", function(_, action)
         for i = 1, self.widgetCount do
             self.widgets[i]:onActionStop(action)
         end
     end)
     ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onUpdate", function()
+    self.handlers.onUpdate = self.system:onEvent("onUpdate", function()
         self:onUpdate()
     end)
+end
+
+--- Stops listening to the game's events (the hot reload then builds a new Hud).
+function Hud:destroy()
+    for event, id in pairs(self.handlers) do
+        ---@diagnostic disable-next-line: undefined-field
+        self.system:clearEvent(event, id)
+    end
+    self.handlers = {}
 end
 
 --- Updates every widget, then shows what they render.

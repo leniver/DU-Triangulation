@@ -1,7 +1,7 @@
 ---@class Wrapper : Class
 ---@field unit ControlUnit
 ---@field system System
----@field library Library
+---@field app table|nil what the start function of reload() returned
 ---@field stopped boolean
 ---@field stopOnError boolean
 ---@field rethrowErrorAlways boolean
@@ -17,11 +17,10 @@ local logs = {}
 
 ---@param unit ControlUnit
 ---@param system System
----@param library Library
-function Wrapper:init(unit, system, library)
+function Wrapper:init(unit, system)
     self.unit = unit
     self.system = system
-    self.library = library
+    self.app = nil
     self.stopped = false
     self.stopOnError = false
     self.rethrowErrorAlways = false
@@ -53,21 +52,26 @@ function Wrapper:init(unit, system, library)
     self.traceback = traceback or (debug and debug.traceback) or function(a, b) return b or a end
 end
 
+--- Runs callback, printing its error instead of stopping the script.
 ---@param callback function
+---@return any result what callback returned, nil when it failed
 function Wrapper:execute(callback)
     if not self.stopped then
-        local a, b = xpcall(callback, self.traceback, self.unit)
-        if not a then
-            self.error(b)
+        local ok, result = xpcall(callback, self.traceback, self.unit)
+        if not ok then
+            self.error(result)
+            return nil
         end
+        return result
     end
 end
 
----@param callback function
----@param localRequires? string[]
-function Wrapper:reload(callback, localRequires)
-    self.library.clearAllEventHandlers()
-
+--- Runs start, then reruns it each time lalt, brake, lshift and speedup are pressed in that order
+--- (Alt + Ctrl + Shift + speedup): first the object start returned is destroyed (its destroy()
+--- removes its event handlers), then the modules are reloaded from their files.
+---@param start fun(): table|nil builds the program and returns its root object
+---@param modules? string[] the modules to reload, in load order
+function Wrapper:reload(start, modules)
     local shiftDown = false
     local altDown = false
     local ctrlDown = false
@@ -82,17 +86,17 @@ function Wrapper:reload(callback, localRequires)
                 if action == "lshift" then
                     shiftDown = true
                 elseif shiftDown and action == "speedup" then
-                    if localRequires then
-                        for i=1,#localRequires do
-                            local lib = localRequires[i]
-                            if package.loaded[lib] then
-                                self.system.print("Reload: " .. lib)
-                                package.loaded[lib] = nil
-                                require(lib)
-                            end
+                    if self.app and self.app.destroy then
+                        self.app:destroy()
+                    end
+                    for _, lib in ipairs(modules or {}) do
+                        if package.loaded[lib] then
+                            self.system.print("Reload: " .. lib)
+                            package.loaded[lib] = nil
+                            require(lib)
                         end
                     end
-                    self:reload(callback, localRequires)
+                    self.app = self:execute(start)
                 end
             end
         end
@@ -104,9 +108,9 @@ function Wrapper:reload(callback, localRequires)
         elseif action == "brake" then
             ctrlDown = false
         elseif action == "lshift" then
-            shiftDown = true
+            shiftDown = false
         end
     end)
 
-    self:execute(callback)
+    self.app = self:execute(start)
 end

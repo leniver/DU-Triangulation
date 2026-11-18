@@ -15,3 +15,35 @@ test("the Hud passes the game's events to its widgets", function()
     assertTrue(system.screen:find('id="triangulation"', 1, true) ~= nil, "the scanner was not rendered")
     assertTrue(system.screen:find('class="help"', 1, true) ~= nil, "the help was not rendered")
 end)
+
+test("destroy() removes the Hud's event handlers", function()
+    loadWidgets()
+    local system = FakeSystem()
+    local hud = Hud:new(system)
+    hud:destroy()
+    for _, event in ipairs({ "onUpdate", "onActionStart", "onActionStop" }) do
+        assertEqual(system:handlerCount(event), 0, event .. " handlers")
+    end
+end)
+
+test("the hot reload rebuilds the program without stacking handlers", function()
+    loadWidgets()
+    loadSource("includes/Wrapper")
+    local system = FakeSystem()
+    local starts = 0
+    local wrapper = Wrapper:new({}, system)
+    wrapper:reload(function()
+        starts = starts + 1
+        return Hud:new(system)
+    end, {})
+    local function press(...) for _, action in ipairs({ ... }) do system:triggerEvent("onActionStart", action) end end
+    local function release(...) for _, action in ipairs({ ... }) do system:triggerEvent("onActionStop", action) end end
+
+    press("lalt", "brake", "lshift", "speedup")
+    assertEqual(starts, 2, "starts after the reload keys")
+    assertEqual(system:handlerCount("onUpdate"), 1, "onUpdate handlers after a reload")
+
+    release("lshift", "brake", "lalt")
+    press("lalt", "brake", "speedup")
+    assertEqual(starts, 2, "starts after the keys without Shift")
+end)

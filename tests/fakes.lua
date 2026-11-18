@@ -54,9 +54,11 @@ function FakeSystem()
         if self.handlers[event] then self.handlers[event][id] = false end
     end
 
+    -- Like DU-LuaC, handlers added while an event is dispatched only get the next ones.
     function system:triggerEvent(event, ...)
-        for _, handler in ipairs(self.handlers[event] or {}) do
-            if handler then handler(self, ...) end
+        local list = self.handlers[event] or {}
+        for i = 1, #list do
+            if list[i] then list[i](self, ...) end
         end
     end
 

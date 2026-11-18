@@ -30,3 +30,14 @@ test("a subclass without init uses the init of its base", function()
     assertTrue(instance:instanceOf(Base), "instanceOf(Base)")
     assertEqual(Class():new().value, nil, "a root class without init")
 end)
+
+test("dev mode loads the same modules as the bundle, in the same order", function()
+    local list = readFile("src/requires_dev.lua"):match("local modules = (%b{})")
+    assertTrue(list ~= nil, "no module list in requires_dev.lua")
+    local dev = {}
+    for path in list:gmatch('"([^"]+)"') do
+        dev[#dev + 1] = path
+    end
+    local prod = prodModules()
+    assertEqual(table.concat(dev, ", "), table.concat(prod, ", "))
+end)

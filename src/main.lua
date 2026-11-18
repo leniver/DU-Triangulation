@@ -9,7 +9,6 @@ localDirectory = "autoconf/custom/triangulation/"
 
 
 require("parameters")
-require("includes/Events")
 if DEV_MODE then
   require(localDirectory .. "requires_dev")
   require(localDirectory .. "init")
