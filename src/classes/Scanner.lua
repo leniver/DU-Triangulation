@@ -101,13 +101,14 @@ function Scanner:initializeOffets(displaySettings)
     end
 
     if displaySettings then
-        self.system.print([[====== Triangulation settings ======]])
-        self.system.print([[Screen resolution: ]] .. screenSize)
-        self.system.print([[Left offset: ]] .. self.offsetLeft .. "px")
-        self.system.print([[Offset top: ]] .. self.offsetTop .. "px")
-        self.system.print([[Font size: ]] .. self.fontSize .. "px")
-        self.system.print([[Angle: ]] .. self.angle .. "°")
-        self.system.print([[==================================]])
+        local t = self.translator
+        self.system.print("====== " .. t:get("Triangulation settings") .. " ======")
+        self.system.print(t:get("Screen resolution: %s", screenSize))
+        self.system.print(t:get("Left offset: %s px", self.offsetLeft))
+        self.system.print(t:get("Top offset: %s px", self.offsetTop))
+        self.system.print(t:get("Font size: %s px", self.fontSize))
+        self.system.print(t:get("Angle: %s°", self.angle))
+        self.system.print("==================================")
     end
 end
 
@@ -214,24 +215,24 @@ function Scanner:onActionStart(action)
         if self.altDown then
             if action == "up" then
                 self.angle = self.angle - 0.01
-                self.system.print("Angle: " .. self.angle)
+                self.system.print(self.translator:get("Angle: %s°", self.angle))
             elseif action == "down" then
                 self.angle = self.angle + 0.01
-                self.system.print("Angle: " .. self.angle)
+                self.system.print(self.translator:get("Angle: %s°", self.angle))
             end
         else
             if action == "up" then
                 self.offsetTop = self.offsetTop - 1
-                self.system.print("Offset top: " .. self.offsetTop)
+                self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
             elseif action == "down" then
                 self.offsetTop = self.offsetTop + 1
-                self.system.print("Offset top: " .. self.offsetTop)
+                self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
             elseif action == "strafeleft" then
                 self.offsetLeft = self.offsetLeft - 1
-                self.system.print("Offset left: " .. self.offsetLeft)
+                self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
             elseif action == "straferight" then
                 self.offsetLeft = self.offsetLeft + 1
-                self.system.print("Offset left: " .. self.offsetLeft)
+                self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
             end
         end
     end
@@ -278,7 +279,17 @@ end
 
 function Scanner:render()
     if self.hide then
-        return { style = "", html = "Triangulation hidden" }
+        return {
+            style = [[
+            .triangulation-hidden {
+            font-size: 12px;
+            left: 10px;
+            position: absolute;
+            top: 25px;
+        }
+            ]],
+            html = [[<div class="triangulation-hidden">]] .. self.translator:get("Triangulation hidden") .. [[</div>]]
+        }
     else
         local top = 0.02 + 0.253 * self.distance + -1.13E-04 * (self.distance ^ 2)
         local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]

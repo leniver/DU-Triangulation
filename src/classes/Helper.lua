@@ -82,13 +82,13 @@ function Helper:render()
             html = [[
             <div class="help">
             <b>]] .. self.translator:get("Triangulation") .. [[</b>
-            <label>]] .. self.translator:get("Add step") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
-            <label>]] .. self.translator:get("Show/Hide(reset)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
-            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mousewheel") .. [[</span></br>
+            <label>]] .. self.translator:get("Add reading") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
+            <label>]] .. self.translator:get("Show/hide (resets)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
+            <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mouse wheel") .. [[</span></br>
             <b>]] .. self.translator:get("Miscellaneous") .. [[</b>
             <label>]] .. self.translator:get("Hide help") .. [[</label><span> ]] .. key("option9") .. [[</span><br/>
             </div>
-            <small class="version">Version ]] .. self.version .. [[ - &copy; Leniver</small>]],
+            <small class="version">]] .. self.translator:get("Version %s", self.version) .. [[ - &copy; Leniver</small>]],
         }
     else
         return {
@@ -111,9 +111,9 @@ function Helper:render()
             ]],
             html = [[
             <div class="help">
-            Show help: ]] .. self.system.getActionKeyName("option9") ..[[<br/>
+            ]] .. self.translator:get("Show help: %s", self.system.getActionKeyName("option9")) .. [[<br/>
             </div>
-            <small class="version">Version ]] .. self.version .. [[ - &copy; Leniver</small>]],
+            <small class="version">]] .. self.translator:get("Version %s", self.version) .. [[ - &copy; Leniver</small>]],
         }
     end
 end

@@ -1,36 +1,79 @@
-
 ---@class Translator
----@field labels {[string] : string}
+---@field labels {[string] : string}|nil
 Translator = {}
 Translator.__index = Translator
 
+-- French puts a non-breaking space before ":". Written as bytes so that every Lua parser and minifier reads it.
+local NBSP = "\194\160"
 
+-- The keys are the English texts. "%s" is filled with the extra arguments of Translator:get().
 local labels = {
     fr = {
-        ["Triangulation failed"] = "Triangulation échouée",
         ["Ready"] = "Prêt",
         ["Too close"] = "Trop proche",
+        ["Triangulation failed"] = "Échec de la triangulation",
+        ["Triangulation hidden"] = "Triangulation masquée",
+        ["Triangulation"] = "Triangulation",
+        ["Add reading"] = "Ajouter une mesure",
+        ["Show/hide (resets)"] = "Afficher/masquer (réinitialise)",
+        ["Fast scroll"] = "Défilement rapide",
+        ["mouse wheel"] = "molette",
+        ["Miscellaneous"] = "Divers",
+        ["Hide help"] = "Masquer l’aide",
+        ["Show help: %s"] = "Afficher l’aide" .. NBSP .. ": %s",
+        ["Version %s"] = "Version %s",
+        ["Triangulation settings"] = "Réglages de la triangulation",
+        ["Screen resolution: %s"] = "Résolution de l’écran" .. NBSP .. ": %s",
+        ["Left offset: %s px"] = "Décalage horizontal" .. NBSP .. ": %s px",
+        ["Top offset: %s px"] = "Décalage vertical" .. NBSP .. ": %s px",
+        ["Font size: %s px"] = "Taille de police" .. NBSP .. ": %s px",
+        ["Angle: %s°"] = "Angle" .. NBSP .. ": %s°",
     },
     de = {
-        ["Triangulation failed"] = "Triangulation fehlgeschlagen",
         ["Ready"] = "Bereit",
         ["Too close"] = "Zu nah",
+        ["Triangulation failed"] = "Triangulation fehlgeschlagen",
+        ["Triangulation hidden"] = "Triangulation ausgeblendet",
+        ["Triangulation"] = "Triangulation",
+        ["Add reading"] = "Messung hinzufügen",
+        ["Show/hide (resets)"] = "Ein-/Ausblenden (setzt zurück)",
+        ["Fast scroll"] = "Schnell scrollen",
+        ["mouse wheel"] = "Mausrad",
+        ["Miscellaneous"] = "Sonstiges",
+        ["Hide help"] = "Hilfe ausblenden",
+        ["Show help: %s"] = "Hilfe anzeigen: %s",
+        ["Version %s"] = "Version %s",
+        ["Triangulation settings"] = "Triangulationseinstellungen",
+        ["Screen resolution: %s"] = "Bildschirmauflösung: %s",
+        ["Left offset: %s px"] = "Horizontaler Versatz: %s px",
+        ["Top offset: %s px"] = "Vertikaler Versatz: %s px",
+        ["Font size: %s px"] = "Schriftgröße: %s px",
+        ["Angle: %s°"] = "Winkel: %s°",
     },
 }
 
-function Translator.new()
+--- Translations by language code, for the tests.
+Translator.languages = labels
+
+---@param lang? string language code (en, fr, de); defaults to the "language" Lua parameter
+---@return Translator
+function Translator.new(lang)
     local self = setmetatable({}, Translator)
 
-    self.labels = labels[language]
+    self.labels = labels[string.lower(lang or language or "en")]
 
     return self
 end
 
+--- The text for `key` in the current language, or `key` itself (English) when there is no translation.
+--- Extra arguments fill the "%s" placeholders.
 ---@param key string
+---@param ... any
 ---@return string
-function Translator:get(key)
-    if self.labels ~= nil and self.labels[key] ~= nil then
-        return self.labels[key]
+function Translator:get(key, ...)
+    local text = (self.labels ~= nil and self.labels[key]) or key
+    if select("#", ...) > 0 then
+        return string.format(text, ...)
     end
-    return key
+    return text
 end
