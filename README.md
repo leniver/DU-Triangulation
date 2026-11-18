@@ -12,8 +12,11 @@ readings.
 
 The script runs on a programming board and needs no linked elements.
 
-1. Build it with [DU-LuaC](https://github.com/wolfe-labs/DU-LuaC) (see [Development](#development)),
-   copying the result to the clipboard:
+1. Download the `.json` file of the [latest release](https://github.com/leniver/DU-Triangulation/releases/latest),
+   open it in a text editor and copy all of its content.
+
+   Or build it yourself with [DU-LuaC](https://github.com/wolfe-labs/DU-LuaC) (see
+   [Development](#development)), which copies the result to the clipboard:
 
    ```sh
    du-lua build --copy=production/main
