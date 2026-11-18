@@ -6,15 +6,8 @@ Tools = {}
 
 local DEFAULT_COLOR = { 2, 52, 110 } -- dark blue, for a colour parameter that isn't "R G B"
 
-local defaultOffsets = {
-    ["default"] = {
-        scanner = {
-            left = 282,
-            top = 24,
-            size = 13,
-            angle = 13.6,
-        }
-    },
+--- Overlay offsets calibrated in game, by screen resolution.
+local calibratedOffsets = {
     ["1920x2160"] = {
         scanner = {
             left = 658,
@@ -63,7 +56,7 @@ local defaultOffsets = {
             angle = 13.6,
         }
     },
-    ["1650x1050"] = {
+    ["1680x1050"] = {
         scanner = {
             left = 274,
             top = 22,
@@ -105,19 +98,41 @@ local defaultOffsets = {
     },
 }
 
+--- The 1920x1080 offsets scaled to a screen height: the game's HUD scales with the screen height,
+--- and the calibrated entries follow that scale within a few pixels.
+---@param height number
+local function scaledOffsets(height)
+    local scale = height / 1080
+    local offsets = {}
+    for category, values in pairs(calibratedOffsets["1920x1080"]) do
+        offsets[category] = {
+            left = floor(values.left * scale + 0.5),
+            top = floor(values.top * scale + 0.5),
+            size = floor(values.size * scale + 0.5),
+            angle = values.angle,
+        }
+    end
+    return offsets
+end
+
+--- Overlay offsets for the screen resolution: its calibrated entry, or else the 1920x1080 values
+--- scaled to the screen height (e.g. in windowed mode, where the height depends on the taskbar).
 ---@param system System
 ---@param category? string
+---@return table offsets
+---@return string screenSize "<width>x<height>"
 function Tools.getOffsets(system, category)
-    local screenSize = format("%sx%s", system.getScreenWidth(), system.getScreenHeight())
-    local offsets = defaultOffsets["default"]
+    local height = system.getScreenHeight()
+    local screenSize = format("%sx%s", system.getScreenWidth(), height)
+    local offsets = calibratedOffsets[screenSize]
+    if offsets == nil then
+        offsets = scaledOffsets(height > 0 and height or 1080)
+    end
 
-    if defaultOffsets[screenSize] ~= nil then
-        offsets = defaultOffsets[screenSize]
-    end
     if category ~= nil then
-        return offsets[category],screenSize
+        return offsets[category], screenSize
     end
-    return offsets,screenSize
+    return offsets, screenSize
 end
 
 --- The waypoint string ("::pos{...}") of a position in world coordinates.
