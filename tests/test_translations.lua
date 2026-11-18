@@ -1,3 +1,4 @@
+loadSource("includes/Class")
 loadSource("classes/Translator")
 
 --- Source files bundled into the script: the ones src/requires_prod.lua requires, plus init.lua.
@@ -53,8 +54,8 @@ test("translations keep the placeholders of their key", function()
 end)
 
 test("get() falls back to English and fills placeholders", function()
-    assertEqual(Translator.new("en"):get("Ready"), "Ready")
-    assertEqual(Translator.new("FR"):get("Ready"), "Prêt")
-    assertEqual(Translator.new("de"):get("Version %s", "1.0.0"), "Version 1.0.0")
-    assertEqual(Translator.new("xx"):get("Show help: %s", "Alt+9"), "Show help: Alt+9")
+    assertEqual(Translator:new("en"):get("Ready"), "Ready")
+    assertEqual(Translator:new("FR"):get("Ready"), "Prêt")
+    assertEqual(Translator:new("de"):get("Version %s", "1.0.0"), "Version 1.0.0")
+    assertEqual(Translator:new("xx"):get("Show help: %s", "Alt+9"), "Show help: Alt+9")
 end)

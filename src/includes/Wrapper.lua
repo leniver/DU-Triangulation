@@ -1,4 +1,4 @@
----@class Wrapper
+---@class Wrapper : Class
 ---@field unit ControlUnit
 ---@field system System
 ---@field library Library
@@ -10,14 +10,7 @@
 ---@field printError boolean
 ---@field error function
 ---@field traceback function
-Wrapper = {}
-Wrapper.__index = Wrapper
-
-setmetatable(Wrapper, {
-  __call = function (cls, ...)
-    return cls.new(...)
-  end,
-})
+Wrapper = Class()
 
 ---@type {[string] : boolean}
 local logs = {}
@@ -25,10 +18,7 @@ local logs = {}
 ---@param unit ControlUnit
 ---@param system System
 ---@param library Library
----@return Wrapper
-function Wrapper.new(unit, system, library)
-    local self = setmetatable({}, Wrapper)
-
+function Wrapper:init(unit, system, library)
     self.unit = unit
     self.system = system
     self.library = library
@@ -61,8 +51,6 @@ function Wrapper.new(unit, system, library)
         end
     end
     self.traceback = traceback or (debug and debug.traceback) or function(a, b) return b or a end
-
-    return self
 end
 
 ---@param callback function

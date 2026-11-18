@@ -14,6 +14,10 @@ local function extend(_, base)
 
     if base then
         setmetatable(new_class, { __index = base })
+    else
+        --- Default constructor of root classes. Subclasses inherit the init of their base.
+        ---@param ... any[...]
+        function new_class:init(...) end
     end
 
     ---@param ... any[...]
@@ -23,11 +27,6 @@ local function extend(_, base)
         setmetatable(inst, class_mt)
         inst:init(...)
         return inst
-    end
-
-    ---@param ... any[...]
-    function new_class:init(...)
-        DUSystem.print("init must be implemented")
     end
 
     ---@return table

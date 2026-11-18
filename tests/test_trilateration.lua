@@ -1,3 +1,4 @@
+loadSource("includes/Class")
 loadSource("classes/Sphere")
 loadSource("classes/Trilateration")
 
@@ -15,7 +16,7 @@ local function assistedReadings(start, ore, round)
     for i, p in ipairs({ start, p1, p2, p3 }) do
         local d = (ore - p):len()
         if round then d = math.floor(d + 0.5) end
-        readings[i] = Sphere.new(p, d)
+        readings[i] = Sphere:new(p, d)
     end
     return readings
 end
@@ -28,7 +29,7 @@ local function randomCase(random)
 end
 
 test("Sphere:dst is the distance to the sphere's surface", function()
-    local sphere = Sphere.new(vec3(10, 0, 0), 5)
+    local sphere = Sphere:new(vec3(10, 0, 0), 5)
     assertNear(sphere:dst(vec3(20, 0, 0)), 5, 1e-9)
     assertNear(sphere:dst(vec3(10, 2, 0)), 3, 1e-9)
 end)
@@ -62,7 +63,7 @@ test("uses a 5th reading", function()
     local ore = start + vec3(40, 60, -90)
     local readings = assistedReadings(start, ore, false)
     local p5 = ore + vec3(10, 10, 60)
-    readings[5] = Sphere.new(p5, (ore - p5):len())
+    readings[5] = Sphere:new(p5, (ore - p5):len())
     local result = Trilateration.solve(readings)
     assertTrue(result ~= nil, "no result")
     assertNear((result - ore):len(), 0, 0.01, "distance to the ore")
@@ -70,10 +71,10 @@ end)
 
 test("rejects readings that don't agree", function()
     local readings = {
-        Sphere.new(ALIOTH, 10),
-        Sphere.new(ALIOTH + vec3(25, 0, 0), 10),
-        Sphere.new(ALIOTH + vec3(25, 25, 0), 10),
-        Sphere.new(ALIOTH + vec3(30, 50, 25), 300),
+        Sphere:new(ALIOTH, 10),
+        Sphere:new(ALIOTH + vec3(25, 0, 0), 10),
+        Sphere:new(ALIOTH + vec3(25, 25, 0), 10),
+        Sphere:new(ALIOTH + vec3(30, 50, 25), 300),
     }
     assertEqual(Trilateration.solve(readings), nil)
 end)
@@ -87,18 +88,18 @@ end)
 test("returns nil instead of failing on degenerate readings", function()
     -- All four readings at the same spot: every candidate is NaN.
     local same = {}
-    for i = 1, 4 do same[i] = Sphere.new(ALIOTH, 100) end
+    for i = 1, 4 do same[i] = Sphere:new(ALIOTH, 100) end
     assertEqual(Trilateration.solve(same), nil)
 
     -- Two readings at the same spot.
     local readings = assistedReadings(ALIOTH, ALIOTH + vec3(30, 20, -100), false)
-    readings[2] = Sphere.new(readings[1].center, readings[1].radius)
+    readings[2] = Sphere:new(readings[1].center, readings[1].radius)
     local result = Trilateration.solve(readings)
     assertTrue(result == nil or result.x == result.x, "NaN result")
 end)
 
 test("asks for a 3rd reading away from the line through the first two", function()
-    local points = { Sphere.new(ALIOTH, 100), Sphere.new(ALIOTH + vec3(25, 0, 0), 100) }
+    local points = { Sphere:new(ALIOTH, 100), Sphere:new(ALIOTH + vec3(25, 0, 0), 100) }
     assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 0, 0)), "line")
     assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 6, 6)), "line")
     assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 10, 0)), nil)
@@ -106,9 +107,9 @@ end)
 
 test("asks for a 4th reading away from the plane through the first three", function()
     local points = {
-        Sphere.new(ALIOTH, 100),
-        Sphere.new(ALIOTH + vec3(25, 0, 0), 100),
-        Sphere.new(ALIOTH + vec3(25, 25, 0), 100),
+        Sphere:new(ALIOTH, 100),
+        Sphere:new(ALIOTH + vec3(25, 0, 0), 100),
+        Sphere:new(ALIOTH + vec3(25, 25, 0), 100),
     }
     assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(0, 40, 0)), "plane")
     assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(0, 40, -4)), "plane")

@@ -1,7 +1,6 @@
----@class Translator
+---@class Translator : Class
 ---@field labels {[string] : string}|nil
-Translator = {}
-Translator.__index = Translator
+Translator = Class()
 
 -- French puts a non-breaking space before ":". Written as bytes so that every Lua parser and minifier reads it.
 local NBSP = "\194\160"
@@ -76,13 +75,8 @@ local labels = {
 Translator.languages = labels
 
 ---@param lang? string language code (en, fr, de); defaults to the "language" Lua parameter
----@return Translator
-function Translator.new(lang)
-    local self = setmetatable({}, Translator)
-
+function Translator:init(lang)
     self.labels = labels[string.lower(lang or language or "en")]
-
-    return self
 end
 
 --- The text for `key` in the current language, or `key` itself (English) when there is no translation.

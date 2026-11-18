@@ -9,7 +9,6 @@ Helper = Class(Widget)
 
 ---@param system System
 ---@param translator Translator
----@return Helper
 function Helper:init(system, translator)
     self.system = system
     self.version = "1.0.0"

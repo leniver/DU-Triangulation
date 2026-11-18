@@ -9,7 +9,7 @@ local function shownScanner(setup)
     if setup then setup() end
     local system, player = FakeSystem(), FakePlayer(ALIOTH)
     DUSystem = system
-    local scanner = Scanner:new(system, player, Translator.new("en"))
+    local scanner = Scanner:new(system, player, Translator:new("en"))
     scanner:onActionStart("speeddown")
     scanner:onUpdate()
     return scanner, system, player
@@ -50,7 +50,7 @@ local function assistedTargets(setCamera)
     local system, player = FakeSystem(), FakePlayer(ALIOTH)
     DUSystem = system
     setCamera(system)
-    local scanner = Scanner:new(system, player, Translator.new("en"))
+    local scanner = Scanner:new(system, player, Translator:new("en"))
     scanner:onActionStart("speeddown")
     local targets = {}
     for i = 1, 4 do targets[i] = WaypointPosition(scanner.targets[i]) end
@@ -81,7 +81,7 @@ test("keys other than show/hide do nothing while hidden", function()
     loadWidgets()
     local system = FakeSystem()
     DUSystem = system
-    local scanner = Scanner:new(system, FakePlayer(ALIOTH), Translator.new("en"))
+    local scanner = Scanner:new(system, FakePlayer(ALIOTH), Translator:new("en"))
     for _ = 1, 4 do
         scanner:onActionStart("speedup")
     end
@@ -98,7 +98,7 @@ end)
 
 test("the help key doesn't start the calibration; its own key does", function()
     local scanner, system = shownScanner()
-    local helper = Helper:new(system, Translator.new("en"))
+    local helper = Helper:new(system, Translator:new("en"))
     local left, top = scanner.offsetLeft, scanner.offsetTop
 
     scanner:onActionStart("option9")

@@ -2,13 +2,13 @@
 local load = function()
     DUUnit.hideWidget()
     --triangulationBackgroundColor = "3 8 7"
-    local hud = Hud.new(DUSystem)
-    local translator = Translator.new()
+    local hud = Hud:new(DUSystem)
+    local translator = Translator:new()
     hud:addWidget(Scanner:new(DUSystem, DUPlayer, translator))
     hud:addWidget(Helper:new(DUSystem, translator))
 end
 
-wrapper = Wrapper.new(DUUnit, DUSystem, DULibrary)
+wrapper = Wrapper:new(DUUnit, DUSystem, DULibrary)
 
 if DEV_MODE then
     wrapper:reload(load, {

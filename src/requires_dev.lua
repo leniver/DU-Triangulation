@@ -1,7 +1,8 @@
 --- Includes
 require(localDirectory .. "includes/tools")
-require(localDirectory .. "includes/Wrapper")
+-- Class first: the classes are built with Class() when they are loaded.
 require(localDirectory .. "includes/Class")
+require(localDirectory .. "includes/Wrapper")
 
 --- Other required files prefixed with "localDirectory"
 -- Widget first: the widgets extend it (Class(Widget)) when they are loaded.

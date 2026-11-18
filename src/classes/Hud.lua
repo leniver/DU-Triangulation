@@ -1,15 +1,13 @@
----@class Hud
+---@class Hud : Class
 ---@field system System
 ---@field widgets Widget[]
 ---@field widgetCount number
-Hud = {}
-Hud.__index = Hud
+Hud = Class()
 
 local floor, ceil = math.floor, math.ceil
 
-function Hud.new(system)
-    local self = setmetatable({}, Hud)
-
+---@param system System
+function Hud:init(system)
     self.system = system
     self.system.showScreen(true)
 
@@ -17,8 +15,6 @@ function Hud.new(system)
     self.widgetCount = 0
 
     self:initEvents()
-
-    return self
 end
 
 ---@param widget Widget

@@ -9,13 +9,25 @@ local function prodModules()
     return modules
 end
 
-test("widgets extend Widget when loaded in the bundled order", function()
+test("the modules load in the bundled order, widgets extending Widget", function()
     DUSystem = FakeSystem()
-    Widget, Helper, Scanner = nil, nil, nil
+    -- Forget what the other tests loaded, so a module loaded before one it needs fails here.
+    Class, Wrapper, Widget, Hud, Helper, Sphere, Trilateration, Scanner, Translator = nil, nil, nil, nil, nil, nil, nil, nil, nil
     for _, path in ipairs(prodModules()) do
         loadSource(path)
     end
     assertTrue(Widget ~= nil, "Widget not loaded")
     assertEqual(Helper:super(), Widget, "Helper's base")
     assertEqual(Scanner:super(), Widget, "Scanner's base")
+end)
+
+test("a subclass without init uses the init of its base", function()
+    loadSource("includes/Class")
+    local Base = Class()
+    function Base:init(value) self.value = value end
+    local Derived = Class(Base)
+    local instance = Derived:new(42)
+    assertEqual(instance.value, 42)
+    assertTrue(instance:instanceOf(Base), "instanceOf(Base)")
+    assertEqual(Class():new().value, nil, "a root class without init")
 end)

@@ -117,10 +117,10 @@ function Scanner:add()
         local size = #self.points
         self.lastError = nil
         if size < 5 then
-            self.points[size + 1] = Sphere.new(self.position, self.distance)
+            self.points[size + 1] = Sphere:new(self.position, self.distance)
             size = size + 1
         elseif (self.distance < self.points[5].radius) then
-            self.points[5] = Sphere.new(self.position, self.distance)
+            self.points[5] = Sphere:new(self.position, self.distance)
         end
         if size == 4 then
             self:solve()

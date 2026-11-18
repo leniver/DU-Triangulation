@@ -1,7 +1,8 @@
 --- Includes
 require("includes/tools")
-require("includes/Wrapper")
+-- Class first: the classes are built with Class() when they are loaded.
 require("includes/Class")
+require("includes/Wrapper")
 
 --- Other required files
 -- Widget first: the widgets extend it (Class(Widget)) when they are loaded.
