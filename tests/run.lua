@@ -11,6 +11,7 @@ local files = {
     "modules",
     "hud",
     "tools",
+    "board_waypoint",
 }
 
 local cases = {}

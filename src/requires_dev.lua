@@ -11,6 +11,7 @@ local modules = {
     "classes/Sphere",
     "classes/Trilateration",
     "classes/Scanner",
+    "classes/BoardWaypoint",
     "classes/Translator",
     "app",
 }

@@ -93,6 +93,7 @@ function Helper:build()
             <label>]] .. self.translator:get("Move overlay left/right") .. [[</label><span> ]] .. key("strafeleft") .. [[ / ]] .. key("straferight") .. [[</span><br/>
             <label>]] .. self.translator:get("Adjust angle") .. [[</label><span> ]] .. key("lalt") .. [[ + ]] .. key("up") .. [[ / ]] .. key("down") .. [[</span><br/>
             <b>]] .. self.translator:get("Miscellaneous") .. [[</b>
+            <label>]] .. self.translator:get("Waypoint to the board") .. [[</label><span> ]] .. key("option7") .. [[</span><br/>
             <label>]] .. self.translator:get("Hide help") .. [[</label><span> ]] .. key("option9") .. [[</span><br/>
             </div>
             <small class="version">]] .. self.translator:get("Version %s", self.version) .. [[ - &copy; Leniver</small>]],

@@ -7,7 +7,8 @@ local loaded = false
 function loadWidgets()
     if not loaded then
         for _, path in ipairs({ "includes/tools", "includes/Class", "classes/Widget", "classes/Hud", "classes/Sphere",
-            "classes/Trilateration", "classes/Translator", "classes/Scanner", "classes/Helper" }) do
+            "classes/Trilateration", "classes/Translator", "classes/Scanner", "classes/Helper",
+            "classes/BoardWaypoint" }) do
             loadSource(path)
         end
         loaded = true
@@ -85,6 +86,21 @@ function FakePlayer(position)
     function player.getWorldUp() return player.up end
     function player.getWorldForward() return player.forward end
     return player
+end
+
+--- A fake `construct` at `position`, with the given axes (world coordinates); change its fields to move it.
+function FakeConstruct(position, right, forward, up)
+    local construct = {
+        position = position,
+        right = right or { 1, 0, 0 },
+        forward = forward or { 0, 1, 0 },
+        up = up or { 0, 0, 1 },
+    }
+    function construct.getWorldPosition() return construct.position end
+    function construct.getWorldRight() return construct.right end
+    function construct.getWorldForward() return construct.forward end
+    function construct.getWorldUp() return construct.up end
+    return construct
 end
 
 --- The position in a "::pos{0,0,x,y,z}" waypoint.

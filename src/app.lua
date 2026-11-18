@@ -9,5 +9,6 @@ function App.start()
     local hud = Hud:new(DUSystem)
     hud:addWidget(Scanner:new(DUSystem, DUPlayer, translator))
     hud:addWidget(Helper:new(DUSystem, translator))
+    hud:addWidget(BoardWaypoint:new(DUSystem, DUPlayer, DUConstruct, translator))
     return hud
 end
