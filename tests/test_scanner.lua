@@ -143,3 +143,24 @@ test("hiding resets follow to false", function()
     scanner:onActionStart("speeddown")
     assertEqual(scanner.follow, false)
 end)
+
+test("after a failed triangulation, the assisted pattern starts again", function()
+    local scanner, system, player = shownScanner()
+    local targets = scanner.targets
+    -- Readings that don't agree.
+    for i, distance in ipairs({ 10, 10, 10, 300 }) do
+        local target = WaypointPosition(targets[i])
+        player.position = { target.x, target.y, target.z }
+        scanner:onUpdate()
+        scanner.distance = distance
+        scanner:onActionStart("speedup")
+    end
+    assertEqual(scanner.lastError, "Triangulation failed")
+    assertEqual(#scanner.points, 0, "readings kept")
+    assertEqual(scanner.targets, targets, "assisted waypoints")
+    assertEqual(system.waypoints[#system.waypoints], targets[1], "waypoint after the failure")
+
+    assertEqual(walkAssistedPattern(scanner, player), 4)
+    assertTrue(scanner.waypoint ~= nil, "no result on the second try")
+    assertEqual(scanner.targets, nil, "assisted waypoints after a result")
+end)

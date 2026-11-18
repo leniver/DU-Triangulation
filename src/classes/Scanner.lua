@@ -143,10 +143,7 @@ function Scanner:add()
         elseif (self.distance < self.points[5].radius) then
             self.points[5] = Sphere:new(self.position, self.distance)
         end
-        if size == 4 then
-            self:solve()
-            self.targets = nil
-        elseif size > 4 then
+        if size >= 4 then
             self:solve()
         elseif self.targets ~= nil then
             self.system.setWaypoint(self.targets[min(#self.points + 1, 4)], false)
@@ -172,9 +169,14 @@ function Scanner:solve()
     if result == nil then
         self.points = {}
         self.lastError = self.translator:get("Triangulation failed")
+        if self.targets ~= nil then
+            -- Start the assisted pattern again.
+            self.system.setWaypoint(self.targets[1], false)
+        end
         return false
     end
 
+    self.targets = nil
     self.follow = true
     self.waypoint = result
     self.system.setWaypoint(Tools.toWaypoint(result), false)
