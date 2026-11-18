@@ -16,6 +16,7 @@ if debug then
         localDirectory .. "includes/Wrapper",
         localDirectory .. "classes/Hud",
         localDirectory .. "classes/Helper",
+        localDirectory .. "classes/Trilateration",
         localDirectory .. "classes/Scanner",
         localDirectory .. "classes/Widget",
         localDirectory .. "classes/Translator",
