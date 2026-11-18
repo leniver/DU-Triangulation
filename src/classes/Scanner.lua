@@ -180,17 +180,22 @@ function Scanner:onActionStart(action)
             -- a few metres short of the waypoint isn't refused as "Too close".
             local increment = clamp(assistedTriangulationDistance, self.limit + 5, 50)
 
-            local forwardVec = vec3(self.system.getCameraWorldForward())
-            local rightVec = vec3(self.system.getCameraWorldRight())
-            local verticalVec = vec3(self.system.getCameraWorldUp())
-
-            local forward = verticalVec:cross(rightVec):normalize()
-            local right = verticalVec:cross(forwardVec):normalize()
-            local vertical = verticalVec:normalize()
+            -- Lay the pattern out on the horizontal plane: the player's up is the planet's vertical,
+            -- and the camera only gives the heading, whatever its pitch.
+            local vertical = vec3(self.player.getWorldUp()):normalize()
+            local look = vec3(self.system.getCameraWorldForward())
+            local forward = look - vertical * look:dot(vertical)
+            if forward:len() < 0.1 then
+                -- Looking (almost) straight up or down: use the way the player faces.
+                local facing = vec3(self.player.getWorldForward())
+                forward = facing - vertical * facing:dot(vertical)
+            end
+            forward = forward:normalize()
+            local side = vertical:cross(forward)
 
             local p1 = position + forward * increment
-            local p2 = p1 + right * increment
-            local p3 = p2 + vertical * increment + right * 5
+            local p2 = p1 + side * increment
+            local p3 = p2 + vertical * increment + side * 5
             self.targets = {
                 ToWaypoint(position),
                 ToWaypoint(p1),
