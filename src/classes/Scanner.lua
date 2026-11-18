@@ -160,7 +160,7 @@ function Scanner:clear()
     self.hide = true
     self.lastError = nil
     self.waypoint = nil
-    self.follow = nil
+    self.follow = false
 end
 
 function Scanner:solve()
