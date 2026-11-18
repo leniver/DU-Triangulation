@@ -11,7 +11,7 @@ Helper = Class(Widget)
 ---@param translator Translator
 function Helper:init(system, translator)
     self.system = system
-    self.version = "1.0.0"
+    self.version = "1.1.0"
     self.translator = translator
     self.backgroundColor = Tools.toRGB(baseColor)
 
