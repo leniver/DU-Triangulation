@@ -8,7 +8,6 @@ local function shownScanner(setup)
     loadWidgets()
     if setup then setup() end
     local system, player = FakeSystem(), FakePlayer(ALIOTH)
-    DUSystem = system
     local scanner = Scanner:new(system, player, Translator:new("en"))
     scanner:onActionStart("speeddown")
     scanner:onUpdate()
@@ -48,7 +47,6 @@ end)
 local function assistedTargets(setCamera)
     loadWidgets()
     local system, player = FakeSystem(), FakePlayer(ALIOTH)
-    DUSystem = system
     setCamera(system)
     local scanner = Scanner:new(system, player, Translator:new("en"))
     scanner:onActionStart("speeddown")
@@ -80,7 +78,6 @@ end)
 test("keys other than show/hide do nothing while hidden", function()
     loadWidgets()
     local system = FakeSystem()
-    DUSystem = system
     local scanner = Scanner:new(system, FakePlayer(ALIOTH), Translator:new("en"))
     for _ = 1, 4 do
         scanner:onActionStart("speedup")

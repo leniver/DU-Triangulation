@@ -132,8 +132,10 @@ local defaultOffsets = {
     },
 }
 
-function getOffsets(category)
-    local screenSize = format("%sx%s", DUSystem.getScreenWidth(),DUSystem.getScreenHeight())
+---@param system System
+---@param category? string
+function getOffsets(system, category)
+    local screenSize = format("%sx%s", system.getScreenWidth(), system.getScreenHeight())
     local offsets = defaultOffsets["default"]
 
     if defaultOffsets[screenSize] ~= nil then

@@ -1,0 +1,17 @@
+dofile(ROOT .. "/tests/fakes.lua")
+
+test("the Hud passes the game's events to its widgets", function()
+    loadWidgets()
+    local system = FakeSystem()
+    local hud = Hud:new(system)
+    local scanner = Scanner:new(system, FakePlayer({ 0, 0, 0 }), Translator:new("en"))
+    hud:addWidget(scanner)
+    hud:addWidget(Helper:new(system, Translator:new("en")))
+    assertEqual(system:handlerCount("onUpdate"), 1, "onUpdate handlers")
+
+    system:triggerEvent("onActionStart", "speeddown")
+    system:triggerEvent("onUpdate")
+    assertTrue(scanner.position ~= nil, "the scanner was not updated")
+    assertTrue(system.screen:find('id="triangulation"', 1, true) ~= nil, "the scanner was not rendered")
+    assertTrue(system.screen:find('class="help"', 1, true) ~= nil, "the help was not rendered")
+end)

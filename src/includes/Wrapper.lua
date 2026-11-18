@@ -86,7 +86,7 @@ function Wrapper:reload(callback, localRequires)
                         for i=1,#localRequires do
                             local lib = localRequires[i]
                             if package.loaded[lib] then
-                                DUSystem.print("Reload: " .. lib)
+                                self.system.print("Reload: " .. lib)
                                 package.loaded[lib] = nil
                                 require(lib)
                             end

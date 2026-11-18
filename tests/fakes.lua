@@ -6,8 +6,7 @@ local loaded = false
 --- Loads the sources the widgets need (once) and resets the Lua parameters to their defaults.
 function loadWidgets()
     if not loaded then
-        DUSystem = FakeSystem()
-        for _, path in ipairs({ "includes/tools", "includes/Class", "classes/Widget", "classes/Sphere",
+        for _, path in ipairs({ "includes/tools", "includes/Class", "classes/Widget", "classes/Hud", "classes/Sphere",
             "classes/Trilateration", "classes/Translator", "classes/Scanner", "classes/Helper" }) do
             loadSource(path)
         end

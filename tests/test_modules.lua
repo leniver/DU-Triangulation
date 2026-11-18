@@ -10,7 +10,6 @@ local function prodModules()
 end
 
 test("the modules load in the bundled order, widgets extending Widget", function()
-    DUSystem = FakeSystem()
     -- Forget what the other tests loaded, so a module loaded before one it needs fails here.
     Class, Wrapper, Widget, Hud, Helper, Sphere, Trilateration, Scanner, Translator = nil, nil, nil, nil, nil, nil, nil, nil, nil
     for _, path in ipairs(prodModules()) do

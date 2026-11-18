@@ -9,6 +9,7 @@ local files = {
     "translations",
     "scanner",
     "modules",
+    "hud",
 }
 
 local cases = {}

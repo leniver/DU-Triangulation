@@ -39,7 +39,6 @@ function Scanner:init(system, player, translator)
     self.problem = nil
 
     self.system = system
-    self.system.showScreen(true)
     self.translator = translator
     self.player = player
     self.hide = true
@@ -68,13 +67,11 @@ function Scanner:init(system, player, translator)
     self:initializeOffets(false)
 
     self.backgroundColor = ToRGB(triangulationBackgroundColor)
-
-    self:initEvents()
 end
 
 ---@param displaySettings boolean
 function Scanner:initializeOffets(displaySettings)
-    local offsets, screenSize = getOffsets("scanner")
+    local offsets, screenSize = getOffsets(self.system, "scanner")
 
     if triangulationLeft > 0 then
         self.offsetLeft = triangulationLeft
@@ -158,13 +155,6 @@ function Scanner:solve()
     self.follow = true
     self.waypoint = result
     self.system.setWaypoint(ToWaypoint(result), false)
-end
-
-function Scanner:initEvents()
-    ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onUpdate", function()
-        self:onUpdate()
-    end)
 end
 
 --- Shows the scanner and starts the assisted pattern from the player's position.

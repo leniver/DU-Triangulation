@@ -23,17 +23,18 @@ function Hud:addWidget(widget)
     self.widgets[self.widgetCount] = widget
 end
 
+--- The Hud is the only one listening to the game's events: it passes them on to its widgets.
 function Hud:initEvents()
     ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onActionStart", function(__, action)
-        for i=1,self.widgetCount do
-            if self.widgets[i] and self.widgets[i].onActionStart then self.widgets[i]:onActionStart(action) end
+    self.system:onEvent("onActionStart", function(_, action)
+        for i = 1, self.widgetCount do
+            self.widgets[i]:onActionStart(action)
         end
     end)
     ---@diagnostic disable-next-line: undefined-field
-    self.system:onEvent("onActionStop", function(__, action)
-        for i=1,self.widgetCount do
-            if self.widgets[i] and self.widgets[i].onActionStop then self.widgets[i]:onActionStop(action) end
+    self.system:onEvent("onActionStop", function(_, action)
+        for i = 1, self.widgetCount do
+            self.widgets[i]:onActionStop(action)
         end
     end)
     ---@diagnostic disable-next-line: undefined-field
@@ -42,16 +43,16 @@ function Hud:initEvents()
     end)
 end
 
+--- Updates every widget, then shows what they render.
 function Hud:onUpdate()
     local style = ""
     local html = ""
-    local widget = nil
-    for i=1,self.widgetCount do
-        if self.widgets[i] then 
-            widget = self.widgets[i]:render()
-            style = style .. widget.style
-            html = html .. widget.html
-        end
+    for i = 1, self.widgetCount do
+        local widget = self.widgets[i]
+        widget:onUpdate()
+        local output = widget:render()
+        style = style .. output.style
+        html = html .. output.html
     end
     self.system.setScreen([[<style>]] .. style .. [[</style>]] .. html)
 end
