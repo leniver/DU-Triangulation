@@ -7,6 +7,7 @@ ROOT = (arg and arg[0] or ""):match("^(.*)[/\\]tests[/\\]run%.lua$") or "."
 local files = {
     "trilateration",
     "translations",
+    "scanner",
 }
 
 local cases = {}

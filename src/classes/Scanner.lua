@@ -24,7 +24,7 @@
 ---@field backgroundColor string
 Scanner = Class(Widget)
 
-local floor, abs, min, max, clamp = math.floor, math.abs, math.min, math.max, Clamp
+local floor, abs, min, clamp = math.floor, math.abs, math.min, Clamp
 
 ---@param system System
 ---@param player Player
@@ -176,7 +176,9 @@ function Scanner:onActionStart(action)
             self:initializeOffets(true)
 
             local position = vec3(self.player.getWorldPosition())
-            local increment = min(max(assistedTriangulationDistance, 15), 50)
+            -- At least 5 m more than the minimum distance between readings, so that a reading taken
+            -- a few metres short of the waypoint isn't refused as "Too close".
+            local increment = clamp(assistedTriangulationDistance, self.limit + 5, 50)
 
             local forwardVec = vec3(self.system.getCameraWorldForward())
             local rightVec = vec3(self.system.getCameraWorldRight())
