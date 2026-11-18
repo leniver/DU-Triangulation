@@ -3,6 +3,7 @@
 ---@field widgets Widget[]
 ---@field widgetCount number
 ---@field handlers {[string] : integer} id of each handler registered on system, by event
+---@field content string|nil what was last given to setScreen
 Hud = Class()
 
 ---@param system System
@@ -52,7 +53,7 @@ function Hud:destroy()
     self.handlers = {}
 end
 
---- Updates every widget, then shows what they render.
+--- Updates every widget, then shows what they render if it changed.
 function Hud:onUpdate()
     local style = ""
     local html = ""
@@ -63,5 +64,9 @@ function Hud:onUpdate()
         style = style .. output.style
         html = html .. output.html
     end
-    self.system.setScreen([[<style>]] .. style .. [[</style>]] .. html)
+    local content = [[<style>]] .. style .. [[</style>]] .. html
+    if content ~= self.content then
+        self.content = content
+        self.system.setScreen(content)
+    end
 end

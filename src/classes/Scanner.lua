@@ -20,6 +20,8 @@
 ---@field angle number
 ---@field fontSize number
 ---@field backgroundColor string
+---@field style string the overlay's CSS, built by updateStyle()
+---@field hiddenOutput {style: string, html: string} what render() returns while hidden
 Scanner = Class(Widget)
 
 local floor, abs, min, clamp = math.floor, math.abs, math.min, Tools.clamp
@@ -73,9 +75,20 @@ function Scanner:init(system, player, translator)
 
     self.lastError = nil
 
+    self.backgroundColor = Tools.toRGB(triangulationBackgroundColor)
     self:initializeOffets(false)
 
-    self.backgroundColor = Tools.toRGB(triangulationBackgroundColor)
+    self.hiddenOutput = {
+        style = [[
+            .triangulation-hidden {
+            font-size: 12px;
+            left: 10px;
+            position: absolute;
+            top: 25px;
+        }
+            ]],
+        html = [[<div class="triangulation-hidden">]] .. translator:get("Triangulation hidden") .. [[</div>]]
+    }
 end
 
 ---@param displaySettings boolean
@@ -116,6 +129,8 @@ function Scanner:initializeOffets(displaySettings)
         self.system.print(t:get("Angle: %s°", self.angle))
         self.system.print("==================================")
     end
+
+    self:updateStyle()
 end
 
 function Scanner:add()
@@ -276,6 +291,7 @@ function Scanner:calibrate(action)
             self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
         end
     end
+    self:updateStyle()
 end
 
 ---@param action string
@@ -319,37 +335,9 @@ function Scanner:checkPosition()
     return Trilateration.checkNextReading(self.points, self.position)
 end
 
-function Scanner:render()
-    if self.hide then
-        return {
-            style = [[
-            .triangulation-hidden {
-            font-size: 12px;
-            left: 10px;
-            position: absolute;
-            top: 25px;
-        }
-            ]],
-            html = [[<div class="triangulation-hidden">]] .. self.translator:get("Triangulation hidden") .. [[</div>]]
-        }
-    else
-        local sliderTop = GAUGE_HEIGHT / 100 * (100 - sliderHeight(self.distance) - SLIDER_OFFSET)
-        local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]
-
-        if self.lastError ~= nil then
-            status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
-        elseif self.calibrating then
-            status = [[<span class="status calibration">]] .. self.translator:get("Calibration") .. [[</span>]]
-        elseif self.problem == "close" then
-            status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
-        elseif self.problem == "line" then
-            status = [[<span class="status error">]] .. self.translator:get("Move sideways") .. [[</span>]]
-        elseif self.problem == "plane" then
-            status = [[<span class="status error">]] .. self.translator:get("Move up or down") .. [[</span>]]
-        end
-
-        return {
-            style = [[
+--- Builds the overlay's CSS. Called when the offsets, font size or angle change, not every frame.
+function Scanner:updateStyle()
+    self.style = [[
             #triangulation {
             border-bottom: ]] .. GAUGE_HEIGHT .. [[vh solid rgba(]] .. self.backgroundColor .. [[,.25);
             border-right: 1vw solid transparent;
@@ -368,7 +356,6 @@ function Scanner:render()
             color:#eca943;
                 display: block;
             left: -8px;
-            top: ]] .. sliderTop .. [[vh;
             position: absolute;
         }
             #triangulation .slider i{
@@ -400,13 +387,36 @@ function Scanner:render()
                 top: calc(]] .. GAUGE_HEIGHT .. [[vh + 5px);
                 width: 100%;
             }
-         ]],
-            html = [[
+         ]]
+end
+
+function Scanner:render()
+    if self.hide then
+        return self.hiddenOutput
+    end
+
+    local sliderTop = GAUGE_HEIGHT / 100 * (100 - sliderHeight(self.distance) - SLIDER_OFFSET)
+    local status = [[<span class="status ready">]] .. self.translator:get("Ready") .. [[</span>]]
+
+    if self.lastError ~= nil then
+        status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
+    elseif self.calibrating then
+        status = [[<span class="status calibration">]] .. self.translator:get("Calibration") .. [[</span>]]
+    elseif self.problem == "close" then
+        status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
+    elseif self.problem == "line" then
+        status = [[<span class="status error">]] .. self.translator:get("Move sideways") .. [[</span>]]
+    elseif self.problem == "plane" then
+        status = [[<span class="status error">]] .. self.translator:get("Move up or down") .. [[</span>]]
+    end
+
+    return {
+        style = self.style,
+        html = [[
         <div id="triangulation">	 	
         ]] .. status .. [[
-        <div class="slider">◯<span>━━[ <i>]] .. self.distance .. [[</i> ]</span></div>
+        <div class="slider" style="top: ]] .. sliderTop .. [[vh">◯<span>━━[ <i>]] .. self.distance .. [[</i> ]</span></div>
         <p>]] .. self.selected[min(#self.points, 4)] .. [[</p>
         </div>]]
-        }
-    end
+    }
 end

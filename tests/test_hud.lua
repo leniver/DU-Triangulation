@@ -47,3 +47,21 @@ test("the hot reload rebuilds the program without stacking handlers", function()
     press("lalt", "brake", "speedup")
     assertEqual(starts, 2, "starts after the keys without Shift")
 end)
+
+test("the Hud only updates the screen when its content changes", function()
+    loadWidgets()
+    local system = FakeSystem()
+    local hud = Hud:new(system)
+    local scanner = Scanner:new(system, FakePlayer({ 0, 0, 0 }), Translator:new("en"))
+    hud:addWidget(scanner)
+    hud:addWidget(Helper:new(system, Translator:new("en")))
+    system:triggerEvent("onActionStart", "speeddown")
+
+    system:triggerEvent("onUpdate")
+    system:triggerEvent("onUpdate")
+    assertEqual(system.screenUpdates, 1, "updates without changes")
+
+    system.throttle = 1 -- the mouse wheel moves the slider
+    system:triggerEvent("onUpdate")
+    assertEqual(system.screenUpdates, 2, "updates after a change")
+end)

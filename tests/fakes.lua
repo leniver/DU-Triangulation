@@ -21,6 +21,7 @@ function FakeSystem()
         printed = {},
         waypoints = {},
         screen = nil,
+        screenUpdates = 0, -- number of setScreen() calls
         throttle = 0,
         width = 1920,
         height = 1080,
@@ -33,7 +34,10 @@ function FakeSystem()
     function system.print(message) system.printed[#system.printed + 1] = tostring(message) end
     function system.setWaypoint(waypoint) system.waypoints[#system.waypoints + 1] = waypoint end
     function system.showScreen() end
-    function system.setScreen(content) system.screen = content end
+    function system.setScreen(content)
+        system.screen = content
+        system.screenUpdates = system.screenUpdates + 1
+    end
     function system.getActionKeyName(action) return "[" .. action .. "]" end
     function system.getThrottleInputFromMouseWheel() return system.throttle end
     function system.getScreenWidth() return system.width end

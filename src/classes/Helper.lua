@@ -4,8 +4,8 @@
 ---@field translator Translator
 ---@field backgroundColor string
 ---@field open boolean
+---@field output {style: string, html: string} what render() returns; rebuilt when the help opens or closes
 Helper = Class(Widget)
-
 
 ---@param system System
 ---@param translator Translator
@@ -16,10 +16,13 @@ function Helper:init(system, translator)
     self.backgroundColor = Tools.toRGB(baseColor)
 
     self.open = false
+    self.output = self:build()
 end
 
-
-function Helper:render()
+--- What the help shows, open or closed. Built when it opens or closes, which also picks up the
+--- player's current key bindings.
+---@return {style: string, html: string}
+function Helper:build()
     if self.open then
         local key = self.system.getActionKeyName
         return {
@@ -123,9 +126,14 @@ function Helper:render()
     end
 end
 
+function Helper:render()
+    return self.output
+end
 
+---@param action string
 function Helper:onActionStart(action)
     if action == "option9" then
         self.open = not self.open
+        self.output = self:build()
     end
 end
