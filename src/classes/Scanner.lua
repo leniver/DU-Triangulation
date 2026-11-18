@@ -3,7 +3,7 @@
 ---@field targets? string[]
 ---@field distance number
 ---@field limit number
----@field range boolean
+---@field problem string|nil why no reading can be taken here: "close", "line" or "plane"
 ---@field system System
 ---@field translator Translator
 ---@field player Player
@@ -36,7 +36,7 @@ function Scanner:init(system, player, translator)
 
 
     self.limit = 20
-    self.range = true
+    self.problem = nil
 
     self.system = system
     self.system.showScreen(true)
@@ -113,7 +113,7 @@ function Scanner:initializeOffets(displaySettings)
 end
 
 function Scanner:add()
-    if self.range then
+    if self.problem == nil then
         local size = #self.points
         self.lastError = nil
         if size < 5 then
@@ -254,7 +254,7 @@ function Scanner:onUpdate()
             throttle = clamp(throttle * 5, -5, 5)
         end
         self.position = vec3(self.player.getWorldPosition())
-        self.range = self:checkRange()
+        self.problem = self:checkPosition()
         self.distance = clamp(floor(self.distance + (throttle * 1)), 0, 480)
 
         if abs(throttle) > 0 then
@@ -268,13 +268,15 @@ function Scanner:onUpdate()
     end
 end
 
-function Scanner:checkRange()
+--- Why no reading can be taken at the current position, or nil when one can.
+---@return string|nil problem "close" (too close to an earlier reading), "line" or "plane" (see Trilateration.checkNextReading)
+function Scanner:checkPosition()
     for i = 1, #self.points do
         if (self.points[i].center - self.position):len() < self.limit then
-            return false
+            return "close"
         end
     end
-    return true
+    return Trilateration.checkNextReading(self.points, self.position)
 end
 
 function Scanner:render()
@@ -296,8 +298,12 @@ function Scanner:render()
 
         if self.lastError ~= nil then
             status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
-        elseif not self.range then
+        elseif self.problem == "close" then
             status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
+        elseif self.problem == "line" then
+            status = [[<span class="status error">]] .. self.translator:get("Move sideways") .. [[</span>]]
+        elseif self.problem == "plane" then
+            status = [[<span class="status error">]] .. self.translator:get("Move up or down") .. [[</span>]]
         end
 
         return {

@@ -59,6 +59,38 @@ local function isDistanceCloserThan(s1, s2, s3, s4, point, distance)
     return s1:dst(point) <= distance and s2:dst(point) <= distance and s3:dst(point) <= distance and s4:dst(point) <= distance
 end
 
+--- Readings that are almost on a line or in a plane give results that pass the final check but can
+--- be hundreds of metres off. With whole-metre readings, these minimums keep 90% of the results
+--- within about 12 m of the ore (25 m legs, ore 30-200 m away).
+Trilateration.minLineDistance = 10 -- the 3rd reading from the line through the first two
+Trilateration.minPlaneDistance = 5 -- the 4th reading from the plane through the first three
+
+--- Whether a reading taken at `position` keeps the geometry usable for the solver.
+---@param points Sphere[] the readings taken so far
+---@param position vec3 where the next reading would be taken
+---@return string|nil problem "line" when a 3rd reading would be too close to the line through the
+--- first two, "plane" when a 4th one would be too close to the plane through the first three, else nil
+function Trilateration.checkNextReading(points, position)
+    local count = #points
+    if count == 2 then
+        local axis = points[2].center - points[1].center
+        local v = position - points[1].center
+        if (v - v:project_on(axis)):len() < Trilateration.minLineDistance then
+            return "line"
+        end
+    elseif count == 3 then
+        local normal = (points[2].center - points[1].center):cross(points[3].center - points[1].center)
+        local length = normal:len()
+        if length == 0 then
+            return "line"
+        end
+        if math.abs((position - points[1].center):dot(normal)) / length < Trilateration.minPlaneDistance then
+            return "plane"
+        end
+    end
+    return nil
+end
+
 --- Finds the point that best matches the readings.
 ---@param points Sphere[] 4 readings, plus an optional 5th one that refines the result
 ---@return vec3|nil result nil when there are fewer than 4 readings or they don't agree

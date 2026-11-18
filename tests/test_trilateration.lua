@@ -96,3 +96,29 @@ test("returns nil instead of failing on degenerate readings", function()
     local result = Trilateration.solve(readings)
     assertTrue(result == nil or result.x == result.x, "NaN result")
 end)
+
+test("asks for a 3rd reading away from the line through the first two", function()
+    local points = { Sphere.new(ALIOTH, 100), Sphere.new(ALIOTH + vec3(25, 0, 0), 100) }
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 0, 0)), "line")
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 6, 6)), "line")
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(50, 10, 0)), nil)
+end)
+
+test("asks for a 4th reading away from the plane through the first three", function()
+    local points = {
+        Sphere.new(ALIOTH, 100),
+        Sphere.new(ALIOTH + vec3(25, 0, 0), 100),
+        Sphere.new(ALIOTH + vec3(25, 25, 0), 100),
+    }
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(0, 40, 0)), "plane")
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(0, 40, -4)), "plane")
+    assertEqual(Trilateration.checkNextReading(points, ALIOTH + vec3(0, 40, 5)), nil)
+end)
+
+test("accepts every reading of the assisted pattern", function()
+    local readings = assistedReadings(ALIOTH, ALIOTH + vec3(30, 20, -100), false)
+    for i = 2, 4 do
+        local taken = { table.unpack(readings, 1, i - 1) }
+        assertEqual(Trilateration.checkNextReading(taken, readings[i].center), nil, "reading " .. i)
+    end
+end)
