@@ -167,56 +167,74 @@ function Scanner:initEvents()
     end)
 end
 
+--- Shows the scanner and starts the assisted pattern from the player's position.
+function Scanner:show()
+    self:clear()
+    self.hide = false
+    self:initializeOffets(true)
+
+    local position = vec3(self.player.getWorldPosition())
+    -- At least 5 m more than the minimum distance between readings, so that a reading taken
+    -- a few metres short of the waypoint isn't refused as "Too close".
+    local increment = clamp(assistedTriangulationDistance, self.limit + 5, 50)
+
+    -- Lay the pattern out on the horizontal plane: the player's up is the planet's vertical,
+    -- and the camera only gives the heading, whatever its pitch.
+    local vertical = vec3(self.player.getWorldUp()):normalize()
+    local look = vec3(self.system.getCameraWorldForward())
+    local forward = look - vertical * look:dot(vertical)
+    if forward:len() < 0.1 then
+        -- Looking (almost) straight up or down: use the way the player faces.
+        local facing = vec3(self.player.getWorldForward())
+        forward = facing - vertical * facing:dot(vertical)
+    end
+    forward = forward:normalize()
+    local side = vertical:cross(forward)
+
+    local p1 = position + forward * increment
+    local p2 = p1 + side * increment
+    local p3 = p2 + vertical * increment + side * 5
+    self.targets = {
+        ToWaypoint(position),
+        ToWaypoint(p1),
+        ToWaypoint(p2),
+        ToWaypoint(p3)
+    }
+    self.waypoint = nil
+    self.system.setWaypoint(self.targets[1], false)
+end
+
 ---@param action string
 function Scanner:onActionStart(action)
+    -- Modifier keys are tracked even while hidden, so their state is right once the scanner is shown.
+    if action == "lshift" then
+        self.shiftDown = true
+        return
+    elseif action == "lalt" then
+        self.altDown = true
+        return
+    end
+
     if action == "speeddown" then
         if self.hide then
-            self:clear()
-            self.hide = false
-            self:initializeOffets(true)
-
-            local position = vec3(self.player.getWorldPosition())
-            -- At least 5 m more than the minimum distance between readings, so that a reading taken
-            -- a few metres short of the waypoint isn't refused as "Too close".
-            local increment = clamp(assistedTriangulationDistance, self.limit + 5, 50)
-
-            -- Lay the pattern out on the horizontal plane: the player's up is the planet's vertical,
-            -- and the camera only gives the heading, whatever its pitch.
-            local vertical = vec3(self.player.getWorldUp()):normalize()
-            local look = vec3(self.system.getCameraWorldForward())
-            local forward = look - vertical * look:dot(vertical)
-            if forward:len() < 0.1 then
-                -- Looking (almost) straight up or down: use the way the player faces.
-                local facing = vec3(self.player.getWorldForward())
-                forward = facing - vertical * facing:dot(vertical)
-            end
-            forward = forward:normalize()
-            local side = vertical:cross(forward)
-
-            local p1 = position + forward * increment
-            local p2 = p1 + side * increment
-            local p3 = p2 + vertical * increment + side * 5
-            self.targets = {
-                ToWaypoint(position),
-                ToWaypoint(p1),
-                ToWaypoint(p2),
-                ToWaypoint(p3)
-            }
-            self.waypoint = nil
-            self.system.setWaypoint(self.targets[1], false)
+            self:show()
         else
             self:clear()
         end
-    elseif action == "option9" then
+        return
+    end
+
+    -- The other keys only act on the shown scanner.
+    if self.hide then
+        return
+    end
+
+    if action == "option9" then
         self.frozen = not self.frozen
     elseif action == "speedup" then
         self:add()
     elseif action == "booster" then
         self.follow = not self.follow
-    elseif action == "lshift" then
-        self.shiftDown = true
-    elseif action == "lalt" then
-        self.altDown = true
     end
     if self.frozen then
         if self.altDown then

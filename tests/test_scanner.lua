@@ -76,3 +76,22 @@ test("assisted waypoints use the player's heading when looking straight down", f
     assertNear((targets[2] - targets[1]):len(), 25, 0.01, "1st leg")
     assertNear(targets[2].z, targets[1].z, 0.01, "height of the 2nd waypoint")
 end)
+
+test("keys other than show/hide do nothing while hidden", function()
+    loadWidgets()
+    local system = FakeSystem()
+    DUSystem = system
+    local scanner = Scanner:new(system, FakePlayer(ALIOTH), Translator.new("en"))
+    for _ = 1, 4 do
+        scanner:onActionStart("speedup")
+    end
+    scanner:onActionStart("booster")
+    assertEqual(#scanner.points, 0, "readings taken while hidden")
+    assertEqual(#system.waypoints, 0, "waypoints set while hidden")
+    assertEqual(scanner.follow, false, "follow toggled while hidden")
+
+    -- Modifier keys are still tracked.
+    scanner:onActionStart("lshift")
+    scanner:onActionStart("speeddown")
+    assertEqual(scanner.shiftDown, true, "Shift state")
+end)
