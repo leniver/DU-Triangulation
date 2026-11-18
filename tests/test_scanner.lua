@@ -126,3 +126,13 @@ test("ending the calibration prints the Lua parameters to keep it", function()
     assertTrue(printed:find("triangulationTop = " .. scanner.offsetTop, 1, true) ~= nil, printed)
     assertTrue(printed:find("triangulationAngle = ", 1, true) ~= nil, printed)
 end)
+
+test("by default, the overlay offsets follow the screen resolution", function()
+    loadWidgets()
+    local system = FakeSystem()
+    system.width, system.height = 2560, 1440
+    local scanner = Scanner:new(system, FakePlayer(ALIOTH), Translator:new("en"))
+    assertEqual(scanner.offsetLeft, 377, "left offset")
+    assertEqual(scanner.offsetTop, 34, "top offset")
+    assertEqual(scanner.fontSize, 18, "font size")
+end)
