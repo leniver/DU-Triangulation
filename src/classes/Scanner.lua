@@ -14,7 +14,7 @@
 ---@field selected string[]
 ---@field altDown boolean
 ---@field shiftDown boolean
----@field frozen boolean
+---@field calibrating boolean the movement keys move the overlay
 ---@field lastError string
 ---@field lastMessage string
 ---@field offsetLeft number
@@ -56,7 +56,7 @@ function Scanner:init(system, player, translator)
 
     self.altDown = false
     self.shiftDown = false
-    self.frozen = false
+    self.calibrating = false
 
     self.lastError = nil
     self.lastMessage = nil
@@ -229,36 +229,55 @@ function Scanner:onActionStart(action)
         return
     end
 
-    if action == "option9" then
-        self.frozen = not self.frozen
+    if action == "option8" then
+        self:toggleCalibration()
     elseif action == "speedup" then
         self:add()
     elseif action == "booster" then
         self.follow = not self.follow
     end
-    if self.frozen then
-        if self.altDown then
-            if action == "up" then
-                self.angle = self.angle - 0.01
-                self.system.print(self.translator:get("Angle: %s°", self.angle))
-            elseif action == "down" then
-                self.angle = self.angle + 0.01
-                self.system.print(self.translator:get("Angle: %s°", self.angle))
-            end
-        else
-            if action == "up" then
-                self.offsetTop = self.offsetTop - 1
-                self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
-            elseif action == "down" then
-                self.offsetTop = self.offsetTop + 1
-                self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
-            elseif action == "strafeleft" then
-                self.offsetLeft = self.offsetLeft - 1
-                self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
-            elseif action == "straferight" then
-                self.offsetLeft = self.offsetLeft + 1
-                self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
-            end
+    if self.calibrating then
+        self:calibrate(action)
+    end
+end
+
+--- Turns the calibration mode on or off. When it ends, prints the values to copy into the Lua parameters.
+function Scanner:toggleCalibration()
+    self.calibrating = not self.calibrating
+    if self.calibrating then
+        self.system.print(self.translator:get("Calibration on: see the help for the keys"))
+    else
+        self.system.print(self.translator:get("Calibration off. To keep it, set these Lua parameters:"))
+        self.system.print("triangulationLeft = " .. self.offsetLeft)
+        self.system.print("triangulationTop = " .. self.offsetTop)
+        self.system.print("triangulationAngle = " .. self.angle)
+    end
+end
+
+--- Moves or skews the overlay, to align it with the game's scanner gauge.
+---@param action string
+function Scanner:calibrate(action)
+    if self.altDown then
+        if action == "up" then
+            self.angle = self.angle - 0.01
+            self.system.print(self.translator:get("Angle: %s°", self.angle))
+        elseif action == "down" then
+            self.angle = self.angle + 0.01
+            self.system.print(self.translator:get("Angle: %s°", self.angle))
+        end
+    else
+        if action == "up" then
+            self.offsetTop = self.offsetTop - 1
+            self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
+        elseif action == "down" then
+            self.offsetTop = self.offsetTop + 1
+            self.system.print(self.translator:get("Top offset: %s px", self.offsetTop))
+        elseif action == "strafeleft" then
+            self.offsetLeft = self.offsetLeft - 1
+            self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
+        elseif action == "straferight" then
+            self.offsetLeft = self.offsetLeft + 1
+            self.system.print(self.translator:get("Left offset: %s px", self.offsetLeft))
         end
     end
 end
@@ -323,6 +342,8 @@ function Scanner:render()
 
         if self.lastError ~= nil then
             status = [[<span class="status error">]] .. self.lastError .. [[</span>]]
+        elseif self.calibrating then
+            status = [[<span class="status calibration">]] .. self.translator:get("Calibration") .. [[</span>]]
         elseif self.problem == "close" then
             status = [[<span class="status error">]] .. self.translator:get("Too close") .. [[</span>]]
         elseif self.problem == "line" then
@@ -372,6 +393,9 @@ function Scanner:render()
         }
             #triangulation .status.error{
             color: red;
+        }
+            #triangulation .status.calibration{
+            color: #498aff;
         }
             #triangulation p{
                 display: block;

@@ -85,6 +85,12 @@ function Helper:render()
             <label>]] .. self.translator:get("Add reading") .. [[</label><span> ]] .. key("speedup") .. [[</span><br/>
             <label>]] .. self.translator:get("Show/hide (resets)") .. [[</label><span> ]] .. key("speeddown") .. [[</span><br/>
             <label>]] .. self.translator:get("Fast scroll") .. [[</label><span>]] .. key("lshift") .. [[ + ]] .. self.translator:get("mouse wheel") .. [[</span></br>
+            <label>]] .. self.translator:get("Track distance to result") .. [[</label><span> ]] .. key("booster") .. [[</span><br/>
+            <b>]] .. self.translator:get("Calibration") .. [[</b>
+            <label>]] .. self.translator:get("Calibration mode") .. [[</label><span> ]] .. key("option8") .. [[</span><br/>
+            <label>]] .. self.translator:get("Move overlay up/down") .. [[</label><span> ]] .. key("up") .. [[ / ]] .. key("down") .. [[</span><br/>
+            <label>]] .. self.translator:get("Move overlay left/right") .. [[</label><span> ]] .. key("strafeleft") .. [[ / ]] .. key("straferight") .. [[</span><br/>
+            <label>]] .. self.translator:get("Adjust angle") .. [[</label><span> ]] .. key("lalt") .. [[ + ]] .. key("up") .. [[ / ]] .. key("down") .. [[</span><br/>
             <b>]] .. self.translator:get("Miscellaneous") .. [[</b>
             <label>]] .. self.translator:get("Hide help") .. [[</label><span> ]] .. key("option9") .. [[</span><br/>
             </div>
