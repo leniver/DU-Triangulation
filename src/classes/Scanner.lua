@@ -271,11 +271,12 @@ end
 ---@param action string
 function Scanner:calibrate(action)
     if self.altDown then
+        -- Rounded to the hundredth, so that repeated steps don't add up floating-point errors.
         if action == "up" then
-            self.angle = self.angle - 0.01
+            self.angle = floor((self.angle - 0.01) * 100 + 0.5) / 100
             self.system.print(self.translator:get("Angle: %s°", self.angle))
         elseif action == "down" then
-            self.angle = self.angle + 0.01
+            self.angle = floor((self.angle + 0.01) * 100 + 0.5) / 100
             self.system.print(self.translator:get("Angle: %s°", self.angle))
         end
     else

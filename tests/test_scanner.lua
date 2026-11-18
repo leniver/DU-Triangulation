@@ -164,3 +164,15 @@ test("after a failed triangulation, the assisted pattern starts again", function
     assertTrue(scanner.waypoint ~= nil, "no result on the second try")
     assertEqual(scanner.targets, nil, "assisted waypoints after a result")
 end)
+
+test("the calibration angle stays a clean hundredth", function()
+    local scanner, system = shownScanner()
+    scanner:onActionStart("option8")
+    scanner:onActionStart("lalt")
+    scanner.angle = 15.85 -- without rounding, 500 steps of 0.01 from here end at 20.850000000001
+    for _ = 1, 500 do
+        scanner:onActionStart("down")
+    end
+    assertEqual(tostring(scanner.angle), "20.85")
+    assertEqual(system.printed[#system.printed], "Angle: 20.85°")
+end)
